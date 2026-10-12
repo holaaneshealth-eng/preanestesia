@@ -51,6 +51,8 @@ function cargarFilas(csv: string): FilaFarmaco[] {
 function ctx(): ContextoReglas {
   return {
     fechaHoraIntervencion: IV,
+    // Fecha de referencia fija (29/09/2026): la prueba no depende del reloj real.
+    fechaReferencia: new Date(2026, 8, 29),
     riesgoHemorragico: 'alto',
     riesgoCardiovascular: 'intermedio',
     grupoOftalmologico: 'no_aplica',

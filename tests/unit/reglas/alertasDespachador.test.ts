@@ -11,11 +11,15 @@ import { HECHOS_VACIOS } from '../../../src/dominio/entrevista/hechosClinicos.ts
 
 // Fecha de intervención lejana para que los plazos SÍ se puedan cumplir (evita que
 // "plazo no alcanzable" dispare en los casos que no lo prueban).
-const IV_LEJANA = new Date(Date.now() + 120 * 86_400_000);
+// Intervención muy lejana (hoy + 120 días) y fecha de referencia = hoy: la prueba
+// se ancla al reloj (ref siempre antes de la intervención), nunca a una fecha de
+// calendario concreta, así que es determinista sin depender del día real.
+const AHORA = new Date();
+const IV_LEJANA = new Date(AHORA.getTime() + 120 * 86_400_000);
 
 function ctx(p: Partial<ContextoReglas> = {}): ContextoReglas {
   return {
-    fechaHoraIntervencion: IV_LEJANA, riesgoHemorragico: 'alto', riesgoCardiovascular: 'intermedio',
+    fechaHoraIntervencion: IV_LEJANA, fechaReferencia: AHORA, riesgoHemorragico: 'alto', riesgoCardiovascular: 'intermedio',
     grupoOftalmologico: 'no_aplica', neuroaxial: false, bloqueoProfundo: false,
     riesgoTromboticoAlto: false, espacioCerrado: false, retina: false, pesoKg: 80, aclaramiento: null, ...p,
   };

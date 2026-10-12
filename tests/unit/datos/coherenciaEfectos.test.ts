@@ -147,7 +147,7 @@ describe('Coherencia §5.16 · pruebas', () => {
 // ———————————————————————— reglas (§8.10) ————————————————————————
 function ctx(p: Partial<ContextoReglas> = {}): ContextoReglas {
   return {
-    fechaHoraIntervencion: IV, riesgoHemorragico: 'bajo', riesgoCardiovascular: 'intermedio',
+    fechaHoraIntervencion: IV, fechaReferencia: new Date(2026, 8, 29), riesgoHemorragico: 'bajo', riesgoCardiovascular: 'intermedio',
     grupoOftalmologico: 'no_aplica', neuroaxial: false, bloqueoProfundo: false,
     riesgoTromboticoAlto: false, espacioCerrado: false, retina: false,
     pesoKg: 80, aclaramiento: null, pautaFarmaco: { horas: ['09:00'] }, ...p,

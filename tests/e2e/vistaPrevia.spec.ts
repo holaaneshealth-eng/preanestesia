@@ -1,6 +1,29 @@
 import { test, expect, type Page } from '@playwright/test';
 
 /**
+ * Fechas en formato AAAA-MM-DD calculadas EN TIEMPO DE EJECUCIÓN a partir de hoy, para
+ * que ninguna prueba de navegador dependa de una fecha concreta del calendario. La
+ * fecha de intervención por defecto es hoy + 30 días; para fechas de módulos (stent,
+ * ictus, analíticas) se calculan desplazamientos relativos a esa intervención.
+ */
+function fechaISO(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+/** Hoy + `dias` días (por defecto 30), en AAAA-MM-DD. */
+function fechaRelativaHoy(dias = 30): string {
+  return fechaISO(new Date(Date.now() + dias * 86_400_000));
+}
+/** La fecha de intervención por defecto de las pruebas: hoy + 30 días. */
+const FECHA_INTERVENCION = fechaRelativaHoy(30);
+/** Una fecha `dias` días ANTES de la intervención por defecto (p. ej. para módulos). */
+function fechaAntesIntervencion(dias: number): string {
+  return fechaISO(new Date(Date.now() + (30 - dias) * 86_400_000));
+}
+
+/**
  * Orden de la entrevista tras la Fase 2 (decisión del servicio, 2026-10-04):
  * 1 intervención · 2 ALERGIAS · 3 datos básicos · 4 antecedentes · 5 hábitos ·
  * 6 enfermedades · 7 técnica · 8 medicación · 9 vía aérea (no en telefónica) ·
@@ -25,7 +48,7 @@ async function entrevistaMinimaHastaResumen(page: Page) {
   await page.goto('/preanestesia/');
   await page.getByRole('button', { name: 'Presencial' }).click();
   await page.getByRole('button', { name: 'Comenzar' }).click();
-  await page.locator('#fecha').fill('2026-11-05');
+  await page.locator('#fecha').fill(FECHA_INTERVENCION);
   await page.locator('#proc').fill('hernioplastia');
   await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
   await page.getByRole('button', { name: 'Continuar' }).click(); // 1 -> 2
@@ -80,8 +103,8 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
 
-    // Fecha a más de 60 días para comprobar el aviso.
-    await page.locator('#fecha').fill('2027-01-15');
+    // Fecha a más de 60 días para comprobar el aviso (hoy + 90 días).
+    await page.locator('#fecha').fill(fechaRelativaHoy(90));
     await expect(page.getByText(/más de 60 días/)).toBeVisible();
     // Sin hora: aviso de las 08:00.
     await expect(page.getByText(/se asumirán las/)).toBeVisible();
@@ -170,7 +193,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Comenzar' }).click();
 
     // Paso 1.
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -251,7 +274,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
 
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -307,7 +330,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Comenzar' }).click();
 
     // Paso 1: artroplastia de rodilla (técnica neuroaxial probable). Fecha fija.
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('Artroplastia total de rodilla');
     await page.getByRole('button', { name: /Artroplastia total de rodilla/i }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -324,7 +347,7 @@ test.describe('Vista previa', () => {
     // Paso 6: cardiopatía isquémica con stent programado reciente (hace ~2 meses).
     await page.getByRole('checkbox', { name: 'Cardiopatía isquémica / infarto' }).check();
     await page.getByRole('group', { name: /stent \(muelle\)/i }).getByRole('button', { name: 'Sí' }).click();
-    await page.locator('#cardiopatia_isquemica-stent_fecha').fill('2026-09-05');
+    await page.locator('#cardiopatia_isquemica-stent_fecha').fill(fechaAntesIntervencion(60)); // ~2 meses antes
     await page.locator('#cardiopatia_isquemica-stent_motivo').selectOption('programado');
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7 técnica
 
@@ -347,7 +370,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Comenzar' }).click();
 
     // Paso 1.
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -389,7 +412,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
 
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -447,7 +470,7 @@ test.describe('Vista previa', () => {
     await page.goto('/preanestesia/');
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -497,7 +520,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
 
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -538,7 +561,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
 
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -579,7 +602,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
 
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -623,7 +646,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
 
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -638,10 +661,10 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 4 antecedentes
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
 
-    // Paso 6: marcar "Ictus o AIT" y poner una fecha reciente (menos de 3 meses antes del 05/11).
+    // Paso 6: marcar "Ictus o AIT" y poner una fecha reciente (menos de 3 meses antes de la intervención).
     await page.getByRole('checkbox', { name: 'Ictus o AIT' }).check();
     await page.getByRole('group', { name: /ictus o un AIT/ }).getByRole('button', { name: 'Sí' }).click();
-    await page.locator('#ictus_o_tvp-ictus_fecha').fill('2026-10-01');
+    await page.locator('#ictus_o_tvp-ictus_fecha').fill(fechaAntesIntervencion(35)); // < 3 meses antes
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7
 
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
@@ -658,7 +681,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
 
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -701,7 +724,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Comenzar' }).click();
 
     // Paso 1: catarata (fecha concreta → el motor usa el grupo oftalmológico de la técnica).
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('catarata');
     await page.getByRole('button', { name: /Cirugia de catarata con anestesia topica/i }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -750,7 +773,7 @@ test.describe('Vista previa', () => {
     await page.goto('/preanestesia/');
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.getByRole('button', { name: /no está en la lista/ }).click();
     await expect(page.getByText(/no hay valores por defecto/)).toBeVisible();
     // Sin riesgos marcados, no se puede continuar.
@@ -766,7 +789,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Telefónica' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
 
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -800,7 +823,7 @@ test.describe('Vista previa', () => {
     await page.goto('/preanestesia/');
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -878,7 +901,7 @@ test.describe('Vista previa', () => {
     await page.goto('/preanestesia/');
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -917,7 +940,7 @@ test.describe('Vista previa', () => {
     await page.goto('/preanestesia/');
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -933,13 +956,13 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
 
-    // Paso 8: añadir Eliquis y dar el aclaramiento con una analítica antigua (junio).
+    // Paso 8: añadir Eliquis y dar el aclaramiento con una analítica antigua.
     await page.locator('#med').fill('Eliquis');
     await page.getByRole('button', { name: /Eliquis/ }).first().click();
     await page.getByRole('button', { name: '09:00', exact: true }).first().click();
     await page.locator('#acl-tipo').selectOption('aclaramiento');
     await page.locator('#acl-valor').fill('80');
-    await page.locator('#acl-fecha').fill('2026-06-01'); // > 3 meses antes del 05/11/2026
+    await page.locator('#acl-fecha').fill(fechaAntesIntervencion(150)); // > 3 meses antes de la intervención
     await page.getByRole('button', { name: 'Continuar' }).click(); // 8 -> 9
     await page.getByRole('button', { name: 'Continuar' }).click(); // 9 vía aérea -> 10
     await page.getByRole('button', { name: 'Continuar' }).click(); // 10 consentimiento -> 11
@@ -955,7 +978,7 @@ test.describe('Vista previa', () => {
     await page.goto('/preanestesia/');
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('Artroplastia total de rodilla');
     await page.getByRole('button', { name: /Artroplastia total de rodilla/i }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -999,7 +1022,7 @@ test.describe('Vista previa', () => {
     await page.goto('/preanestesia/');
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -1060,7 +1083,7 @@ test.describe('Vista previa', () => {
     await page.goto('/preanestesia/');
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -1264,7 +1287,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Comenzar' }).click();
 
     // Paso 1 con fecha e intervención.
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('hernioplastia');
     await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -1332,7 +1355,7 @@ test.describe('Vista previa', () => {
     await page.goto('/preanestesia/');
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
-    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
     await page.locator('#proc').fill('Artroplastia total de rodilla');
     await page.getByRole('button', { name: /Artroplastia total de rodilla/i }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();

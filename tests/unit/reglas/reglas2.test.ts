@@ -13,7 +13,7 @@ import { combinacionFija } from '../../../src/dominio/reglas/motor.ts';
 const IV = new Date(2026, 9, 15, 8, 0);
 function ctx(p: Partial<ContextoReglas> = {}): ContextoReglas {
   return {
-    fechaHoraIntervencion: IV, riesgoHemorragico: 'alto', riesgoCardiovascular: 'intermedio',
+    fechaHoraIntervencion: IV, fechaReferencia: new Date(2026, 8, 29), riesgoHemorragico: 'alto', riesgoCardiovascular: 'intermedio',
     grupoOftalmologico: 'no_aplica', neuroaxial: false, bloqueoProfundo: false,
     riesgoTromboticoAlto: false, espacioCerrado: false, retina: false, pesoKg: 80, aclaramiento: null,
     // Pauta a las 08:00: plazos en horas caen en el límite exacto; plazos en días,

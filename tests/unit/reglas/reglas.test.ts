@@ -22,6 +22,7 @@ const IV = new Date(2026, 9, 15, 8, 0);
 function ctx(parcial: Partial<ContextoReglas> = {}): ContextoReglas {
   return {
     fechaHoraIntervencion: IV,
+    fechaReferencia: new Date(2026, 8, 29),
     riesgoHemorragico: 'alto',
     riesgoCardiovascular: 'intermedio',
     grupoOftalmologico: 'no_aplica',
