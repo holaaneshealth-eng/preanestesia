@@ -2018,4 +2018,4 @@ _Mecanismo distinto de las alertas: condiciones que el anestesiólogo revisa al 
   - `ths_vaginal` — terapia hormonal sustitutiva vaginal\|THS vaginal (no)
 
 ---
-_Generado el 2026-10-08._
+_Generado el 2026-10-12._

@@ -78,6 +78,12 @@ export function seccionesRiesgoAnestesia(e: EntradaRiesgos): ClaveRiesgo[] {
       // Local sin sedación: solo la frase breve (ninguna sección de riesgos extensa).
       anadir('local_sola');
       break;
+    case 'no_se_sabe':
+      // Sin técnica decidida: si NO es neuroaxial probable, se da la información más
+      // general (anestesia general, o la de niño). Si es neuroaxial probable, se trata
+      // como neuroaxial (más abajo), sin la sección general.
+      if (!e.neuroaxialProbable) anadir(seccionGeneral);
+      break;
     default:
       break;
   }

@@ -83,8 +83,8 @@ tra_cirugia_columna_lumbar;Artrodesis lumbar;traumatologia;intermedio;alto;no_ap
 tra_hernia_discal;Discectomia lumbar;traumatologia;intermedio;alto;no_aplica;si;si;no;no;si;no;infraumbilical;
 tra_laminectomia;Laminectomia;traumatologia;intermedio;alto;no_aplica;si;si;si;no;si;no;infraumbilical;
 tra_cirugia_mano;Cirugia de mano;traumatologia;bajo;bajo;no_aplica;si;si;no;no;no;no;supraumbilical;si
-tra_tunel_carpiano;Liberacion del tunel carpiano;traumatologia;bajo;minimo;no_aplica;no;no;no;no;no;no;infraumbilical;
-tra_dupuytren;Cirugia de Dupuytren;traumatologia;bajo;bajo;no_aplica;si;si;no;no;no;no;infraumbilical;
+tra_tunel_carpiano;Liberacion del tunel carpiano;traumatologia;bajo;minimo;no_aplica;no;no;no;no;no;no;infraumbilical;si
+tra_dupuytren;Cirugia de Dupuytren;traumatologia;bajo;bajo;no_aplica;si;si;no;no;no;no;infraumbilical;si
 tra_halux_valgus;Cirugia de hallux valgus;traumatologia;bajo;bajo;no_aplica;si;si;no;no;no;no;infraumbilical;
 tra_artroscopia_tobillo;Artroscopia de tobillo;traumatologia;bajo;bajo;no_aplica;si;si;no;no;no;no;infraumbilical;
 tra_retirada_material;Retirada de material de osteosintesis;traumatologia;bajo;bajo;no_aplica;si;si;no;no;no;no;infraumbilical;

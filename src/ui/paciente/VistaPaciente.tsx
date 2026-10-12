@@ -45,6 +45,29 @@ export function VistaPaciente({ cadena }: Props) {
     return () => { vivo = false; };
   }, [cadena]);
 
+  // Al imprimir o guardar como PDF, la sección plegable de riesgos (§8.17) debe salir
+  // desplegada; se abre en «beforeprint» y se devuelve a su estado anterior en «afterprint».
+  useEffect(() => {
+    const previos: Array<[HTMLDetailsElement, boolean]> = [];
+    const abrir = () => {
+      previos.length = 0;
+      document.querySelectorAll<HTMLDetailsElement>('details.riesgos-anestesia-plegable').forEach((d) => {
+        previos.push([d, d.open]);
+        d.open = true;
+      });
+    };
+    const restaurar = () => {
+      for (const [d, estaba] of previos) d.open = estaba;
+      previos.length = 0;
+    };
+    window.addEventListener('beforeprint', abrir);
+    window.addEventListener('afterprint', restaurar);
+    return () => {
+      window.removeEventListener('beforeprint', abrir);
+      window.removeEventListener('afterprint', restaurar);
+    };
+  }, []);
+
   const t = textosPaciente(idioma);
 
   const fechaEfectiva = useMemo(() => {

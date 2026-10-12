@@ -91,8 +91,17 @@ describe('§8.17 · seccionesRiesgoAnestesia', () => {
       .toEqual(['sedacion', 'bloqueo_ojo']);
   });
 
-  it('técnica desconocida sin pistas → ninguna sección', () => {
-    expect(seccionesRiesgoAnestesia({ ...BASE, tecnica: 'no_se_sabe' })).toEqual([]);
+  it('«no se sabe» sin neuroaxial probable → sección general (adulto)', () => {
+    expect(seccionesRiesgoAnestesia({ ...BASE, tecnica: 'no_se_sabe' })).toEqual(['general']);
+  });
+
+  it('«no se sabe» sin neuroaxial probable, niño → sección niño', () => {
+    expect(seccionesRiesgoAnestesia({ ...BASE, tecnica: 'no_se_sabe', edadAnios: 6 })).toEqual(['nino']);
+  });
+
+  it('«no se sabe» con neuroaxial probable → como neuroaxial (sin general)', () => {
+    expect(seccionesRiesgoAnestesia({ ...BASE, tecnica: 'no_se_sabe', neuroaxialProbable: true }))
+      .toEqual(['raquidea', 'epidural_no_especificada']);
   });
 });
 

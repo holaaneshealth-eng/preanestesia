@@ -7,7 +7,7 @@
     "epidural_no_especificada": "Si finalment s'utilitza una anestèsia epidural, l'anestesiòleg li n'explicarà les diferències.",
     "bloqueo_ojo": "L'anestesiòleg li explicarà els riscos propis del bloqueig de l'ull.",
     "local_sola": "La seva operació es farà amb anestèsia local, que posa el mateix cirurgià. Els seus riscos són mínims.",
-    "bloqueo_hombro_brazo": "En els bloquejos de l'espatlla i del braç que es posen al coll o al costat de la clavícula és molt freqüent notar, mentre dura l'efecte, ronquera, la parpella caiguda d'aquell costat o la sensació de no poder respirar fondo. Desapareixen sols en passar l'efecte. Menys d'1 de cada 1.000 vegades entra aire entre el pulmó i la paret del tòrax (pneumotòrax), que pot necessitar tractament."
+    "bloqueo_hombro_brazo": "En els bloquejos de l'espatlla i del braç que es posen al coll o al costat de la clavícula és molt freqüent notar, mentre dura l'efecte, ronquera, la parpella caiguda d'aquell costat o la sensació de no poder respirar fons. Desapareixen sols en passar l'efecte. Menys d'1 de cada 1.000 vegades entra aire entre el pulmó i la paret del tòrax (pneumotòrax), que pot necessitar tractament."
   },
   "intro": {
     "titulo": "Abans de llegir",
@@ -40,7 +40,7 @@
           ["Molt freqüent", "Mal de coll", "Fins a 4 de cada 10. Millora en un o dos dies."],
           ["Molt freqüent", "Tremolors, set, mareig o dolor a la punxada del sèrum", "Passen en poques hores."],
           ["Freqüent", "Petites ferides als llavis o a la llengua", "1 de cada 20. Es curen soles."],
-          ["Freqüent", "Confusió o despiste durant uns dies, sobretot en persones grans", "Sol desaparèixer en dies."],
+          ["Freqüent", "Confusió o desorientació durant uns dies, sobretot en persones grans", "Sol desaparèixer en dies."],
           ["Poc freqüent", "Infecció respiratòria o dificultat per orinar després de l'operació", "Més probable si fuma o té una malaltia del pulmó."],
           ["Rara", "Esgarrapada a l'ull (còrnia)", "1 de cada 2.800. Molesta uns dies."],
           ["Rara", "Dany en una dent que necessita tractament", "1 de cada 4.500. Més probable amb dents fluixes, fundes o ponts."],
@@ -138,7 +138,7 @@
         "cabeceras": ["Freqüència", "Què pot passar", "Comentari"],
         "filas": [
           ["Molt freqüent", "Somnolència i oblit del que ha passat durant unes hores", "És un efecte buscat."],
-          ["Freqüent", "Respiració més lenta o superficial", "Es corregeix amb oxigen o demanant-li que respiri fondo."],
+          ["Freqüent", "Respiració més lenta o superficial", "Es corregeix amb oxigen o demanant-li que respiri fons."],
           ["Freqüent", "Baixada de tensió o nàusees", "Tenen tractament."],
           ["Poc freqüent", "La sedació no és suficient i cal passar a anestèsia general", "Es decideix en el moment."],
           ["Rara", "Pas del contingut de l'estómac als pulmons (aspiració)", "Per això el dejuni és el mateix que per a una anestèsia general."],

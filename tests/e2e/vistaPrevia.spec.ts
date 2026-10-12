@@ -1327,4 +1327,53 @@ test.describe('Vista previa', () => {
     // Y ofrece el cambio de idioma (castellano/catalán), propio de la vista del paciente.
     await expect(page.getByRole('button', { name: 'Català' })).toBeVisible();
   });
+
+  test('§8.17 vista del QR: la sección de riesgos está plegada, pero se despliega al imprimir y vuelve a plegarse después', async ({ page }) => {
+    await page.goto('/preanestesia/');
+    await page.getByRole('button', { name: 'Presencial' }).click();
+    await page.getByRole('button', { name: 'Comenzar' }).click();
+    await page.locator('#fecha').fill('2026-11-05');
+    await page.locator('#proc').fill('Artroplastia total de rodilla');
+    await page.getByRole('button', { name: /Artroplastia total de rodilla/i }).first().click();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await pasoAlergiasSinAlergias(page);
+    await page.locator('#edad').fill('50');
+    await page.getByRole('radio', { name: 'Hombre' }).check();
+    await page.locator('#peso').fill('80');
+    await page.locator('#talla').fill('175');
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 3 básicos
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 4 antecedentes
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
+    await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole('radio', { name: /Neuroaxial/ }).check();
+    await page.getByRole('radio', { name: 'Raquídea (intradural)' }).check();
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 8 -> 9
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 9 -> 10
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 10 -> 11
+    await pasoMtnd4NoVenezolana(page);
+
+    await page.getByRole('button', { name: /Generar hoja y QR del paciente/ }).click();
+    await expect(page.getByRole('img', { name: /Código QR/ })).toBeVisible();
+    await page.evaluate(() => {
+      const w = window as unknown as { __enlace: string };
+      navigator.clipboard.writeText = async (texto: string) => { w.__enlace = texto; };
+    });
+    await page.getByRole('button', { name: /Copiar enlace para el paciente/ }).click();
+    const enlace = await page.evaluate(() => (window as unknown as { __enlace: string }).__enlace);
+    const fragmento = enlace.slice(enlace.indexOf('#p='));
+    await page.goto(`/preanestesia/paciente/${fragmento}`);
+
+    // La sección de riesgos es un <details> plegable y está CERRADO por defecto.
+    const detalles = page.locator('details.riesgos-anestesia-plegable');
+    await expect(detalles).toHaveCount(1);
+    await expect(detalles).not.toHaveAttribute('open', /.*/);
+
+    // Al imprimir (evento beforeprint), se despliega; en afterprint vuelve a plegarse.
+    await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
+    await expect(detalles).toHaveAttribute('open', /.*/);
+    await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+    await expect(detalles).not.toHaveAttribute('open', /.*/);
+  });
 });

@@ -25,9 +25,13 @@ function entrada(p: Partial<EntradaDerivacion> = {}): EntradaDerivacion {
     ...p,
   };
 }
+// Fecha de referencia fija (antes de la intervención del 15/09): hace la prueba
+// determinista, sin depender del reloj real (si no, al pasar la fecha de la
+// intervención el plazo deja de ser alcanzable y el resultado cambia).
+const REF = new Date(2026, 8, 1, 8, 0);
 function ctx(aclaramiento: number | null, p: Partial<ContextoReglas> = {}): ContextoReglas {
   return {
-    fechaHoraIntervencion: IV, riesgoHemorragico: 'alto', riesgoCardiovascular: 'intermedio',
+    fechaHoraIntervencion: IV, fechaReferencia: REF, riesgoHemorragico: 'alto', riesgoCardiovascular: 'intermedio',
     grupoOftalmologico: 'no_aplica', neuroaxial: false, bloqueoProfundo: false,
     riesgoTromboticoAlto: false, espacioCerrado: false, retina: false, pesoKg: 80, aclaramiento, ...p,
   };
