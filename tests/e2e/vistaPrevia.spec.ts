@@ -750,7 +750,7 @@ test.describe('Vista previa', () => {
     await expect(page.getByText(MANTENER, { exact: false })).toBeVisible();
 
     // Volver al paso 7 y cambiar a retrobulbar/peribulbar → riesgo moderado-alto.
-    await page.getByRole('button', { name: 'Volver' }).click(); // 8 -> 7 técnica
+    await page.getByRole('button', { name: 'Volver', exact: true }).click(); // 8 -> 7 técnica
     await expect(page.getByRole('heading', { name: /Paso 7 · Técnica anestésica prevista/ })).toBeVisible();
     await page.getByRole('checkbox', { name: 'Tópica' }).uncheck();
     await page.getByRole('checkbox', { name: 'Retrobulbar o peribulbar' }).check();
@@ -1581,5 +1581,43 @@ test.describe('Fase ágil · comprobación previa (punto 1)', () => {
 
     // Ya NO existe un paso propio de mtND4: el flujo sigue por datos básicos.
     await expect(page.getByRole('heading', { name: /Paso 3 · Datos básicos/ })).toBeVisible();
+  });
+
+  test('punto 7 · aviso de coherencia: «Volver a enfermedades» lleva al paso 6, conserva la medicación y vuelve', async ({ page }) => {
+    await page.goto('/preanestesia/');
+    await page.getByRole('button', { name: 'Presencial' }).click();
+    await page.getByRole('button', { name: 'Comenzar' }).click();
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
+    await page.locator('#proc').fill('hernioplastia');
+    await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await pasoAlergiasSinAlergias(page);
+    await page.locator('#edad').fill('60');
+    await page.getByRole('radio', { name: 'Hombre' }).check();
+    await page.locator('#peso').fill('80');
+    await page.locator('#talla').fill('175');
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 3 -> 4
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 4 -> 5
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 5 -> 6
+    await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8 medicación
+
+    // Añadir Eliquis sin haber marcado fibrilación auricular → aviso de coherencia.
+    await page.locator('#med').fill('Eliquis');
+    await page.getByRole('button', { name: /Eliquis/ }).first().click();
+    const coherencia = page.locator('.coherencia');
+    await expect(coherencia).toBeVisible();
+
+    // Pulsar «Volver a enfermedades» → paso 6, con la medicación conservada.
+    await coherencia.getByRole('button', { name: 'Volver a enfermedades' }).first().click();
+    await expect(page.getByRole('heading', { name: /Paso 6 · Enfermedades/ })).toBeVisible();
+    // Marcar la fibrilación auricular (para que el aviso desaparezca) y continuar.
+    await page.getByRole('checkbox', { name: /Fibrilación auricular|Arritmia/ }).first().check().catch(() => {});
+    await page.getByRole('button', { name: 'Continuar' }).click();
+
+    // Volvemos al paso de medicación (no al de técnica), con Eliquis todavía presente.
+    await expect(page.getByRole('heading', { name: /Paso 8 · Medicación/ })).toBeVisible();
+    await expect(page.locator('.ficha-farmaco').filter({ hasText: 'Eliquis' })).toBeVisible();
   });
 });

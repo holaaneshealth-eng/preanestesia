@@ -63,6 +63,9 @@ function fechaLegible(d: Date): string {
 
 export function App() {
   const [pantalla, setPantalla] = useState<Pantalla>('inicio');
+  // Si venimos a «enfermedades» desde un aviso de coherencia del paso de medicación
+  // (§7 fase ágil), al pulsar «Continuar» allí se vuelve a medicación en vez de a técnica.
+  const [volverAMedicacion, setVolverAMedicacion] = useState(false);
   const [modalidad, setModalidad] = useState<Modalidad | null>(null);
   const [entrevista, setEntrevista] = useState<EstadoEntrevista>(ESTADO_INICIAL);
   // Si la URL trae «#p=…», es un QR/enlace de paciente: se abre la vista interactiva.
@@ -343,7 +346,14 @@ export function App() {
             onVolver={() => setPantalla('habitos')}
             onContinuar={(datos) => {
               setEntrevista((e) => ({ ...e, cribado: datos }));
-              setPantalla('tecnica');
+              // Si veníamos de un aviso de coherencia del paso de medicación, se vuelve
+              // allí (conservando la medicación); si no, se sigue al paso de técnica.
+              if (volverAMedicacion) {
+                setVolverAMedicacion(false);
+                setPantalla('medicacion');
+              } else {
+                setPantalla('tecnica');
+              }
             }}
           />
         )}
@@ -387,6 +397,11 @@ export function App() {
             onVolver={(datos) => {
               setEntrevista((e) => ({ ...e, medicacion: datos }));
               setPantalla('tecnica');
+            }}
+            onIrAEnfermedades={(datos) => {
+              setEntrevista((e) => ({ ...e, medicacion: datos }));
+              setVolverAMedicacion(true);
+              setPantalla('enfermedades');
             }}
             onContinuar={(datos) => {
               setEntrevista((e) => ({ ...e, medicacion: datos }));

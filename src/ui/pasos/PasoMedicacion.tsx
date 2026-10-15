@@ -51,11 +51,16 @@ interface Props {
   onContinuar: (medicacion: FarmacoTomadoUi[]) => void;
   /** Al volver se conserva la medicación introducida (para recalcular tras cambiar la técnica). */
   onVolver: (medicacion: FarmacoTomadoUi[]) => void;
+  /**
+   * Ir directamente al paso de enfermedades desde un aviso de coherencia (§7 fase ágil);
+   * conserva la medicación y, al pulsar «Continuar» allí, se vuelve a este paso.
+   */
+  onIrAEnfermedades: (medicacion: FarmacoTomadoUi[]) => void;
 }
 
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-export function PasoMedicacion({ inicial, intervencion, enfermedades, respuestasModulos, basicos, aclaramientoManual, onAclaramientoManual, onContinuar, onVolver }: Props) {
+export function PasoMedicacion({ inicial, intervencion, enfermedades, respuestasModulos, basicos, aclaramientoManual, onAclaramientoManual, onContinuar, onVolver, onIrAEnfermedades }: Props) {
   const catalogo = useMemo(() => cargarFarmacos(), []);
   const [medicacion, setMedicacion] = useState<FarmacoTomadoUi[]>(inicial ?? []);
   const [consulta, setConsulta] = useState('');
@@ -178,7 +183,7 @@ export function PasoMedicacion({ inicial, intervencion, enfermedades, respuestas
         <div className="coherencia">
           <h3>Avisos de coherencia</h3>
           {tarjetas.map((t, i) => (
-            <TarjetaCoherencia key={i} t={t} />
+            <TarjetaCoherencia key={i} t={t} onIrAEnfermedades={() => onIrAEnfermedades(medicacion)} />
           ))}
         </div>
       )}
@@ -509,10 +514,11 @@ function grupoCoherencia(f: FarmacoTomadoUi): string | null {
   return mapa[f.grupo] ?? null;
 }
 
-function TarjetaCoherencia({ t }: { t: Tarjeta }) {
+function TarjetaCoherencia({ t, onIrAEnfermedades }: { t: Tarjeta; onIrAEnfermedades: () => void }) {
   return (
     <div className="aviso aviso-info" role="note">
-      {t.mensaje}
+      <div>{t.mensaje}</div>
+      <button type="button" className="boton-enlace" onClick={onIrAEnfermedades}>Volver a enfermedades</button>
     </div>
   );
 }
