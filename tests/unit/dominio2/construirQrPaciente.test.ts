@@ -7,6 +7,10 @@ import { construirContenidoQrPaciente, payloadPaciente, type FarmacoPlan } from 
 import { recalcularHoja, caducidadQrPaciente } from '../../../src/dominio/salidas/qr/hojaPaciente.ts';
 
 const IV = new Date(2026, 9, 15, 8, 0);
+// «Hoy» fijo (1/10/2026, antes de la intervención): el recálculo no depende del
+// reloj real (si no, al pasar la fecha de la intervención el plazo deja de ser
+// alcanzable y «plazoNoCumplible» cambia).
+const AHORA = new Date(2026, 9, 1, 8, 0);
 
 describe('§11 · construcción del QR del paciente', () => {
   it('un anticoagulante en horas viaja con su tipo de plazo y recalcula igual', () => {
@@ -19,7 +23,7 @@ describe('§11 · construcción del QR del paciente', () => {
     expect(contenido.far[0]?.pt).toBe('horas');
     expect(contenido.far[0]?.pd).toBe(48);
     expect(contenido.far[0]?.ac).toBeTrue();
-    const inst = recalcularHoja(contenido, IV);
+    const inst = recalcularHoja(contenido, IV, AHORA);
     expect(inst[0]?.plazoNoCumplible).toBeFalse();
     expect(inst[0]?.texto).toContain('octubre');
   });
@@ -31,7 +35,7 @@ describe('§11 · construcción del QR del paciente', () => {
       meta: { pt: 'dias', pd: 5, ad: false, ac: false },
     }];
     const contenido = construirContenidoQrPaciente(plan, '900123456', IV);
-    const inst = recalcularHoja(contenido, IV);
+    const inst = recalcularHoja(contenido, IV, AHORA);
     expect(inst[0]?.texto).toContain('el anestesiólogo le llamará');
   });
 
@@ -43,7 +47,7 @@ describe('§11 · construcción del QR del paciente', () => {
     }];
     const contenido = construirContenidoQrPaciente(plan, '900123456', IV);
     expect(contenido.far[0]?.tx).toContain('Siga tomándolo');
-    const inst = recalcularHoja(contenido, IV);
+    const inst = recalcularHoja(contenido, IV, AHORA);
     expect(inst[0]?.texto).toContain('Siga tomándolo');
   });
 

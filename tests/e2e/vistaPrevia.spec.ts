@@ -1400,3 +1400,127 @@ test.describe('Vista previa', () => {
     await expect(detalles).not.toHaveAttribute('open', /.*/);
   });
 });
+
+test.describe('Fase ágil · comprobación previa (punto 1)', () => {
+  test('tamaños de campo: edad/peso/talla y año/procedimiento normales; medicamento/reacción grandes', async ({ page }) => {
+    await page.goto('/preanestesia/');
+    await page.getByRole('button', { name: 'Presencial' }).click();
+    await page.getByRole('button', { name: 'Comenzar' }).click();
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
+    await page.locator('#proc').fill('hernioplastia');
+    await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+
+    // Paso 2 · Alergias: medicamento y tipo de reacción deben ser campos grandes.
+    await page.getByRole('checkbox', { name: 'Alergias conocidas' }).check();
+    await expect(page.locator('#al-farmaco')).toHaveClass(/campo-grande/);
+    await expect(page.locator('#al-reaccion')).toHaveClass(/campo-grande/);
+    await page.getByRole('checkbox', { name: 'Alergias conocidas' }).uncheck();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+
+    // Paso 3 · Datos básicos: edad, peso y talla NO deben ser campos grandes.
+    await expect(page.locator('#edad')).not.toHaveClass(/campo-grande/);
+    await expect(page.locator('#peso')).not.toHaveClass(/campo-grande/);
+    await expect(page.locator('#talla')).not.toHaveClass(/campo-grande/);
+    await page.locator('#edad').fill('50');
+    await page.getByRole('radio', { name: 'Hombre' }).check();
+    await page.locator('#peso').fill('80');
+    await page.locator('#talla').fill('175');
+    await page.getByRole('button', { name: 'Continuar' }).click();
+
+    // Paso 4 · Antecedentes: procedimiento y año NO deben ser campos grandes.
+    await expect(page.locator('#ap-proc')).not.toHaveClass(/campo-grande/);
+    await expect(page.locator('#ap-anio')).not.toHaveClass(/campo-grande/);
+  });
+
+  test('«añadir intervención previa»: año, tipo de anestesia e incidencias son opcionales', async ({ page }) => {
+    await page.goto('/preanestesia/');
+    await page.getByRole('button', { name: 'Presencial' }).click();
+    await page.getByRole('button', { name: 'Comenzar' }).click();
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
+    await page.locator('#proc').fill('hernioplastia');
+    await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await pasoAlergiasSinAlergias(page);
+    await page.locator('#edad').fill('50');
+    await page.getByRole('radio', { name: 'Hombre' }).check();
+    await page.locator('#peso').fill('80');
+    await page.locator('#talla').fill('175');
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 3 -> 4 antecedentes
+
+    // Solo con el procedimiento (sin año, sin tipo, sin incidencias) se puede añadir.
+    await page.locator('#ap-proc').fill('Apendicectomía');
+    await page.getByRole('button', { name: 'Añadir a la lista' }).click();
+    await expect(page.getByText('Apendicectomía')).toBeVisible();
+    // Y se puede continuar.
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await expect(page.getByRole('heading', { name: /Paso 5 · Hábitos|Paso 5/ })).toBeVisible();
+  });
+
+  test('AUDIT-C y módulos no son obligatorios: se avanza sin contestarlos', async ({ page }) => {
+    await page.goto('/preanestesia/');
+    await page.getByRole('button', { name: 'Presencial' }).click();
+    await page.getByRole('button', { name: 'Comenzar' }).click();
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
+    await page.locator('#proc').fill('hernioplastia');
+    await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await pasoAlergiasSinAlergias(page);
+    await page.locator('#edad').fill('50');
+    await page.getByRole('radio', { name: 'Hombre' }).check();
+    await page.locator('#peso').fill('80');
+    await page.locator('#talla').fill('175');
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 3 -> 4
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 4 -> 5 hábitos
+
+    // Paso 5 · Hábitos: sin tocar el AUDIT-C se puede continuar.
+    await expect(page.getByText(/Ninguna pregunta es obligatoria/)).toBeVisible();
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 5 -> 6 enfermedades
+
+    // Paso 6 · Enfermedades: marcar una enfermedad con módulo y NO contestar nada.
+    await page.getByRole('checkbox', { name: 'Diabetes' }).first().check();
+    await page.getByRole('button', { name: 'Continuar' }).click(); // avanza sin contestar el módulo
+    // Si avanzamos, el siguiente paso (técnica) es visible.
+    await expect(page.getByRole('heading', { name: /Paso 7 · Técnica/ })).toBeVisible();
+  });
+
+  test('Eliquis y Acovil muestran dosis, frecuencia y hora, y ninguno bloquea el avance', async ({ page }) => {
+    await page.goto('/preanestesia/');
+    await page.getByRole('button', { name: 'Presencial' }).click();
+    await page.getByRole('button', { name: 'Comenzar' }).click();
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
+    await page.locator('#proc').fill('hernioplastia');
+    await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await pasoAlergiasSinAlergias(page);
+    await page.locator('#edad').fill('50');
+    await page.getByRole('radio', { name: 'Hombre' }).check();
+    await page.locator('#peso').fill('80');
+    await page.locator('#talla').fill('175');
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 3 -> 4
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 4 -> 5
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 5 -> 6
+    await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8 medicación
+
+    // Eliquis (apixabán): aparece la frecuencia y la hora; la dosis genérica NO (su
+    // dosis es propia de la regla), pero sí la de la regla.
+    await page.locator('#med').fill('Eliquis');
+    await page.getByRole('button', { name: /Eliquis/ }).first().click();
+    const fichaEliquis = page.locator('.ficha-farmaco').filter({ hasText: 'Eliquis' });
+    await expect(fichaEliquis.getByText('Frecuencia (opcional)')).toBeVisible();
+    await expect(fichaEliquis.getByText(/Horas de toma|hora de la toma|09:00/i).first()).toBeVisible();
+
+    // Acovil (ramipril): dosis genérica + frecuencia.
+    await page.locator('#med').fill('Acovil');
+    await page.getByRole('button', { name: /Acovil/ }).first().click();
+    const fichaAcovil = page.locator('.ficha-farmaco').filter({ hasText: 'Acovil' });
+    await expect(fichaAcovil.getByText('Dosis (opcional)')).toBeVisible();
+    await expect(fichaAcovil.getByText('Frecuencia (opcional)')).toBeVisible();
+
+    // Ninguno bloquea: se puede continuar sin rellenar dosis/frecuencia/hora.
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await expect(page.getByRole('heading', { name: /Paso 9 · Vía aérea|Paso 10 · Consentimiento/ })).toBeVisible();
+  });
+});
