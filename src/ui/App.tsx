@@ -10,7 +10,6 @@ import type { CasoEntrenamiento } from './entrenamiento/casos.ts';
 import { PasoIntervencion } from './pasos/PasoIntervencion.tsx';
 import { PasoBasicos } from './pasos/PasoBasicos.tsx';
 import { PasoAntecedentes } from './pasos/PasoAntecedentes.tsx';
-import { PasoMtnd4 } from './pasos/PasoMtnd4.tsx';
 import { PasoAlergias } from './pasos/PasoAlergias.tsx';
 import { PasoHabitos } from './pasos/PasoHabitos.tsx';
 import { PasoCribado } from './pasos/PasoCribado.tsx';
@@ -51,7 +50,6 @@ type Pantalla =
   | 'medicacion'
   | 'viaAerea'
   | 'consentimiento'
-  | 'mtnd4'
   | 'resumen';
 
 /** "Hoy" fijo para el modo entrenamiento (§14.2): los casos tienen fecha de
@@ -288,9 +286,10 @@ export function App() {
         {pantalla === 'alergias' && (
           <PasoAlergias
             inicial={alergias}
+            inicialMtnd4={mtnd4}
             onVolver={() => setPantalla('intervencion')}
-            onContinuar={(datos) => {
-              setEntrevista((e) => ({ ...e, alergias: datos }));
+            onContinuar={(datos, datosMtnd4) => {
+              setEntrevista((e) => ({ ...e, alergias: datos, mtnd4: datosMtnd4 }));
               setPantalla('basicos');
             }}
           />
@@ -420,19 +419,7 @@ export function App() {
             onVolver={() => setPantalla(modalidad === 'telefonica' ? 'medicacion' : 'viaAerea')}
             onContinuar={(datos) => {
               setEntrevista((e) => ({ ...e, consentimiento: datos }));
-              setPantalla('mtnd4');
-            }}
-          />
-        )}
-
-        {/* 11 · Cribado mtND4 */}
-        {pantalla === 'mtnd4' && (
-          <PasoMtnd4
-            inicial={mtnd4}
-            onVolver={() => setPantalla('consentimiento')}
-            onContinuar={(datos) => {
-              setEntrevista((e) => ({ ...e, mtnd4: datos }));
-              registrarUsoSiProcede();
+              registrarUsoSiProcede(); // marca la valoración como terminada en el cuadro de mando
               setPantalla('resumen');
             }}
           />

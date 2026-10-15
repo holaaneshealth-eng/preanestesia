@@ -70,11 +70,13 @@ async function entrevistaMinimaHastaResumen(page: Page) {
   await expect(page.getByRole('heading', { name: /Resumen de la entrevista/ })).toBeVisible();
 }
 
-/** Paso 11 · mtND4: puerta en «No» → pasa de largo sin alerta. */
+/**
+ * mtND4 (§9) ya no es un paso propio: vive tras una casilla en el paso de alergias
+ * (desmarcada = sin ascendencia venezolana). Tras el consentimiento se llega directo
+ * al resumen, así que este ayudante solo confirma que estamos en el resumen.
+ */
 async function pasoMtnd4NoVenezolana(page: Page) {
-  await expect(page.getByRole('heading', { name: /Paso 11 · Origen materno/ })).toBeVisible();
-  await page.getByRole('radio', { name: 'No', exact: true }).check();
-  await page.getByRole('button', { name: 'Continuar' }).click();
+  await expect(page.getByRole('heading', { name: /Resumen de la entrevista/ })).toBeVisible();
 }
 
 test.describe('Vista previa', () => {
@@ -242,17 +244,9 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click();
     await expect(page.getByRole('heading', { name: /Paso 10 · Consentimiento/ })).toBeVisible();
     await page.getByRole('radio', { name: /Pendiente de entregar/ }).check();
-    await page.getByRole('button', { name: 'Continuar' }).click();
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 10 consentimiento -> resumen
 
-    // Paso 11 — mtND4. Puerta en "Sí, es posible" → aparece el guion y los factores.
-    await expect(page.getByRole('heading', { name: /Paso 11 · Origen materno/ })).toBeVisible();
-    await page.getByRole('radio', { name: 'Sí, es posible' }).check();
-    await expect(page.getByText(/Guion para explicar la pregunta/)).toBeVisible();
-    await page.getByRole('checkbox', { name: /Ascendencia venezolana por línea materna/ }).check();
-    await expect(page.getByText(/Alerta roja/)).toBeVisible();
-    await page.getByRole('button', { name: 'Continuar' }).click();
-
-    // Resumen.
+    // Resumen (el cribado mtND4 ya se recoge en el paso de alergias).
     await expect(page.getByRole('heading', { name: /Resumen de la entrevista/ })).toBeVisible();
     await expect(page.getByText(/Hernioplastia inguinal abierta/)).toBeVisible();
     await expect(page.getByText(/No alergias conocidas/)).toBeVisible();
@@ -1561,5 +1555,31 @@ test.describe('Fase ágil · comprobación previa (punto 1)', () => {
     const anexo = page.locator('section.anexo.riesgos-anestesia');
     await expect(anexo.getByRole('heading', { name: 'Anestesia general' })).toBeVisible();
     await expect(anexo.getByRole('heading', { name: 'Bloqueo de nervios (anestesia locorregional)' })).toBeVisible();
+  });
+
+  test('punto 2 · mtND4 en el paso de alergias: casilla desmarcada por defecto; al marcarla aparece el cribado', async ({ page }) => {
+    await page.goto('/preanestesia/');
+    await page.getByRole('button', { name: 'Presencial' }).click();
+    await page.getByRole('button', { name: 'Comenzar' }).click();
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
+    await page.locator('#proc').fill('hernioplastia');
+    await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+
+    // Paso 2 · Alergias: la casilla del origen materno está DESMARCADA por defecto y
+    // sus campos no se ven hasta marcarla.
+    await expect(page.getByRole('heading', { name: /Paso 2 · Alergias/ })).toBeVisible();
+    const casillaMtnd4 = page.getByRole('checkbox', { name: /antecedentes familiares por línea materna de origen venezolano/ });
+    await expect(casillaMtnd4).not.toBeChecked();
+    await expect(page.getByText(/Guion para explicar la pregunta/)).toHaveCount(0);
+    // Al marcarla aparecen el guion y los factores; marcar la ascendencia → alerta roja.
+    await casillaMtnd4.check();
+    await expect(page.getByText(/Guion para explicar la pregunta/)).toBeVisible();
+    await page.getByRole('checkbox', { name: /Ascendencia venezolana por línea materna/ }).check();
+    await expect(page.getByText(/Alerta roja/)).toBeVisible();
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 2 -> 3
+
+    // Ya NO existe un paso propio de mtND4: el flujo sigue por datos básicos.
+    await expect(page.getByRole('heading', { name: /Paso 3 · Datos básicos/ })).toBeVisible();
   });
 });
