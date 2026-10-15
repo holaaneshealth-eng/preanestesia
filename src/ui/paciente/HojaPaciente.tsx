@@ -49,7 +49,9 @@ export function HojaPaciente({ plan, intervencion, ay, ex }: Props) {
   const t = textosPaciente('es');
 
   const contenido = useMemo(
-    () => construirContenidoQrPaciente(plan, config.telefono_contacto, intervencion.fechaHora, ay, ex),
+    // El teléfono NO viaja en el QR (§config, punto 4): la vista lo lee de config al
+    // renderizar, para que un QR ya entregado muestre el valor nuevo si cambia.
+    () => construirContenidoQrPaciente(plan, '', intervencion.fechaHora, ay, ex),
     [plan, intervencion.fechaHora, ay, ex],
   );
 

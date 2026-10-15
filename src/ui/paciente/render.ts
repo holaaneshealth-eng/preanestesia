@@ -81,7 +81,10 @@ export function renderMed(instr: InstruccionPacienteEstructurada, t: TextosPacie
     case 'confirmacion':
       return rellenar(m.confirmacion, { n: instr.nombre });
     case 'no_cumplible':
-      return rellenar(m.no_cumplible, { n: instr.nombre, tel: telefono });
+      // Si no hay teléfono configurado (§config), no se remite a un número que no aparece.
+      return telefono.trim() === ''
+        ? rellenar(m.no_cumplible_sin_tel, { n: instr.nombre })
+        : rellenar(m.no_cumplible, { n: instr.nombre, tel: telefono });
     case 'mantener':
       return m[`mantener_${e.mv}` as 'mantener_oral'] ?? m.mantener_oral;
     case 'texto_fijo':

@@ -28,6 +28,10 @@ interface Props {
 export function CuerpoHoja({ instrucciones, ay, ex, fecha, t, idioma = 'es', interactivo = false }: Props) {
   const sitTexto = ay && (t.sit as Record<string, string>)[ay.sit];
   const tr = textosRiesgos(idioma);
+  // Teléfono y correo de contacto se leen de config EN EL MOMENTO DE RENDER (§config,
+  // punto 4): el QR no transporta estos datos, así que un QR ya entregado muestra el
+  // valor nuevo al cambiarlos. Vacío = no se muestra la frase que los menciona.
+  const telefonoContacto = (config as { telefono_contacto: string }).telefono_contacto;
   const seccionesRiesgo = ex?.riesgos && ex.riesgos.length > 0 ? renderRiesgosAnestesia(ex.riesgos, tr) : [];
 
   return (
@@ -59,7 +63,7 @@ export function CuerpoHoja({ instrucciones, ay, ex, fecha, t, idioma = 'es', int
             {instrucciones.map((i, k) => (
               <tr key={k} className={i.plazoNoCumplible ? 'fila-alerta' : ''}>
                 <td>{i.nombre}</td>
-                <td>{renderMed(i, t, config.telefono_contacto, fecha)}</td>
+                <td>{renderMed(i, t, telefonoContacto, fecha)}</td>
               </tr>
             ))}
           </tbody>
@@ -120,8 +124,12 @@ export function CuerpoHoja({ instrucciones, ay, ex, fecha, t, idioma = 'es', int
         </>
       )}
 
-      <h2>{t.telefono_titulo}</h2>
-      <p><strong>{config.telefono_contacto}</strong></p>
+      {telefonoContacto !== '' && (
+        <>
+          <h2>{t.telefono_titulo}</h2>
+          <p><strong>{telefonoContacto}</strong></p>
+        </>
+      )}
 
       {ex && ex.anexos.length > 0 && renderAnexos(ex.anexos, fecha, t).map((anexo, k) => (
         <section key={k} className="anexo">

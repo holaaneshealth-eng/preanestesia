@@ -89,7 +89,7 @@ export function VistaPaciente({ cadena }: Props) {
 
   if (estado.tipo === 'cargando') return <main className="contenido"><p>Cargando…</p></main>;
   if (estado.tipo === 'caducado') {
-    return <main className="contenido"><section className="tarjeta"><p>Este enlace ha caducado. Llame al {config.telefono_contacto}.</p></section></main>;
+    return <main className="contenido"><section className="tarjeta"><p>Este enlace ha caducado.{config.telefono_contacto ? ` Llame al ${config.telefono_contacto}.` : ''}</p></section></main>;
   }
   if (estado.tipo === 'invalido') {
     return <main className="contenido"><section className="tarjeta"><p>Este enlace no es válido.</p></section></main>;

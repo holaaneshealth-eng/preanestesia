@@ -1,6 +1,7 @@
 {
   "nombre_centro": "Hospital Vithas Barcelona · Servicio de Anestesiología, Reanimación y Terapéutica del Dolor",
-  "telefono_contacto": "000 000 000",
+  "telefono_contacto": "",
+  "correo_contacto": "",
   "minutos_inactividad": 30,
   "edad_pediatrica_maxima": 17,
   "dias_validez_qr_paciente": 30,

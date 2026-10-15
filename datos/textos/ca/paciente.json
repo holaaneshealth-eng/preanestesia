@@ -55,6 +55,7 @@
   "med": {
     "confirmacion": "Sobre {n}, l'anestesiòleg el trucarà per indicar-li què fer. No ho canviï pel seu compte.",
     "no_cumplible": "Amb aquesta data ja no és possible seguir la pauta de {n}. Truqui al {tel} com abans millor.",
+    "no_cumplible_sin_tel": "Amb aquesta data ja no és possible seguir la pauta de {n}. Contacti amb el servei com abans millor.",
     "mantener_oral": "Continuï prenent-lo com sempre, també el dia de la intervenció, amb un glop d'aigua.",
     "mantener_sublingual": "Continuï posant-se el comprimit sota la llengua com sempre, també el dia de la intervenció.",
     "mantener_subcutanea": "Continuï amb les seves injeccions com sempre.",
