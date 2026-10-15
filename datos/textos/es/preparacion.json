@@ -1,0 +1,35 @@
+{
+  "idioma": "es",
+  "pendiente_revision": false,
+  "higiene": {
+    "titulo": "Higiene antes de la operación",
+    "items": [
+      "Dúchese la noche antes o la misma mañana de la operación con su jabón de siempre y lávese también el pelo.",
+      "No se afeite ni se depile la zona que le van a operar. Si hace falta quitar vello, lo hará el personal del hospital el mismo día con una maquinilla eléctrica.",
+      "Después de la ducha no se ponga cremas, aceite, maquillaje ni perfume.",
+      "Quítese el esmalte y las uñas de gel o acrílicas. Durante la anestesia le medimos el oxígeno con una pinza en el dedo, y el color de las uñas nos ayuda a vigilarle.",
+      "Puede lavarse los dientes aunque esté en ayunas, sin tragar el agua."
+    ]
+  },
+  "joyas": {
+    "titulo": "Joyas y piercings",
+    "items": [
+      "Venga sin joyas ni reloj, y déjelos en casa.",
+      "Quítese todos los piercings antes de venir. Pueden producir quemaduras si se usa el bisturí eléctrico, hacer daño al estar mucho rato en la misma postura y, los de la boca o la nariz, estorbar o soltarse cuando le ayudamos a respirar. Los de la lengua, los labios y la nariz hay que quitarlos siempre.",
+      "Si un piercing no sale o no quiere que se cierre el agujero, en un estudio de piercing le pueden poner una pieza de plástico. Díganoslo al llegar.",
+      "Si usa lentillas, venga con gafas. Las dentaduras postizas se quitan antes de entrar en quirófano."
+    ]
+  },
+  "dia": {
+    "titulo": "El día de la intervención",
+    "pasos": [
+      { "texto": "Venga a la hora que le hayan dicho y pase por admisión con su documento de identidad y, si la tiene, la tarjeta de su aseguradora." },
+      { "texto": "Le acompañarán a la zona de preparación. Allí se quitará la ropa y los objetos personales y se pondrá la bata del hospital." },
+      { "texto": "En la sala de recuperación (URPA), una enfermera le pondrá una vía en el brazo para el suero y la medicación." },
+      { "texto": "Si su anestesia incluye un bloqueo de nervios, el anestesiólogo se lo hará allí, antes de entrar en quirófano, con la ayuda de un ecógrafo.", "soloBloqueo": true },
+      { "texto": "Después pasará a quirófano. Le pondrán pegatinas en el pecho para vigilar el corazón, un manguito para la tensión y una pinza en el dedo para el oxígeno." },
+      { "texto": "Cuando todo esté controlado, el anestesiólogo le dará la medicación para dormirle o relajarle, según su anestesia, y estará a su lado durante toda la operación." },
+      { "texto": "Al terminar, volverá a la sala de recuperación hasta que esté despierto y sin dolor." }
+    ]
+  }
+}

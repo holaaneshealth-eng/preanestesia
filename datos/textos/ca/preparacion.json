@@ -1,0 +1,35 @@
+{
+  "idioma": "ca",
+  "pendiente_revision": true,
+  "higiene": {
+    "titulo": "Higiene abans de l'operació",
+    "items": [
+      "Dutxi's la nit abans o el mateix matí de l'operació amb el seu sabó de sempre i renti's també els cabells.",
+      "No s'afaiti ni es depili la zona que l'operaran. Si cal treure pèl, ho farà el personal de l'hospital el mateix dia amb una maquineta elèctrica.",
+      "Després de la dutxa no es posi cremes, oli, maquillatge ni perfum.",
+      "Tregui's l'esmalt i les ungles de gel o acríliques. Durant l'anestèsia li mesurem l'oxigen amb una pinça al dit, i el color de les ungles ens ajuda a vigilar-lo.",
+      "Es pot rentar les dents encara que estigui en dejú, sense empassar-se l'aigua."
+    ]
+  },
+  "joyas": {
+    "titulo": "Joies i pírcings",
+    "items": [
+      "Vingui sense joies ni rellotge, i deixi'ls a casa.",
+      "Tregui's tots els pírcings abans de venir. Poden produir cremades si es fa servir el bisturí elèctric, fer mal en estar molta estona en la mateixa postura i, els de la boca o el nas, molestar o deixar-se anar quan l'ajudem a respirar. Els de la llengua, els llavis i el nas s'han de treure sempre.",
+      "Si un pírcing no surt o no vol que es tanqui el forat, en un estudi de pírcing li poden posar una peça de plàstic. Digui'ns-ho en arribar.",
+      "Si fa servir lentelles, vingui amb ulleres. Les dentadures postisses es treuen abans d'entrar a quiròfan."
+    ]
+  },
+  "dia": {
+    "titulo": "El dia de la intervenció",
+    "pasos": [
+      { "texto": "Vingui a l'hora que li hagin dit i passi per admissió amb el seu document d'identitat i, si la té, la targeta de la seva asseguradora." },
+      { "texto": "L'acompanyaran a la zona de preparació. Allà es traurà la roba i els objectes personals i es posarà la bata de l'hospital." },
+      { "texto": "A la sala de recuperació (URPA), una infermera li posarà una via al braç per al sèrum i la medicació." },
+      { "texto": "Si la seva anestèsia inclou un bloqueig de nervis, l'anestesiòleg l'hi farà allà, abans d'entrar a quiròfan, amb l'ajuda d'un ecògraf.", "soloBloqueo": true },
+      { "texto": "Després passarà a quiròfan. Li posaran adhesius al pit per vigilar el cor, un maneguet per a la tensió i una pinça al dit per a l'oxigen." },
+      { "texto": "Quan tot estigui controlat, l'anestesiòleg li donarà la medicació per adormir-lo o relaxar-lo, segons la seva anestèsia, i estarà al seu costat durant tota l'operació." },
+      { "texto": "En acabar, tornarà a la sala de recuperació fins que estigui despert i sense dolor." }
+    ]
+  }
+}
