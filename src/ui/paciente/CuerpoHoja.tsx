@@ -8,6 +8,7 @@ import type { AyunoQr, ExtrasHojaQr, InstruccionPacienteEstructurada } from '../
 import type { TextosPaciente, Idioma } from './textosPaciente.ts';
 import { renderMed, renderAyuno, renderAnexos, fechaLarga, horaReloj } from './render.ts';
 import { textosRiesgos, renderRiesgosAnestesia } from './renderRiesgos.ts';
+import { textosPreparacion, renderPreparacion } from './renderPreparacion.ts';
 
 interface Props {
   instrucciones: InstruccionPacienteEstructurada[];
@@ -32,6 +33,22 @@ export function CuerpoHoja({ instrucciones, ay, ex, fecha, t, idioma = 'es', int
   // punto 4): el QR no transporta estos datos, así que un QR ya entregado muestra el
   // valor nuevo al cambiarlos. Vacío = no se muestra la frase que los menciona.
   const telefonoContacto = (config as { telefono_contacto: string }).telefono_contacto;
+  const correoContacto = (config as { correo_contacto?: string }).correo_contacto ?? '';
+  // Pruebas que tiene pero no ha traído (punto 3): frase para traer/enviar el informe.
+  const pruebasNoTraidas = ex?.pruebasNoTraidas ?? [];
+  const lineaPruebas = (() => {
+    if (pruebasNoTraidas.length === 0) return '';
+    const etiquetas = ex!.pruebasNoTraidas!
+      .map((k) => (t.pruebas.etiquetas as Record<string, string>)[k] ?? k);
+    // Unir con comas y «y» antes del último.
+    const lista = etiquetas.length <= 1 ? (etiquetas[0] ?? '')
+      : `${etiquetas.slice(0, -1).join(', ')} y ${etiquetas[etiquetas.length - 1]}`;
+    const plantilla = correoContacto.trim() === '' ? t.pruebas.sin_correo : t.pruebas.con_correo;
+    return plantilla.replace('{pruebas}', lista).replace('{correo}', correoContacto);
+  })();
+  // Preparación para la operación (punto 9), si procede.
+  const tp = textosPreparacion(idioma);
+  const seccionesPrep = ex?.prep ? renderPreparacion(tp, ex.prepBloqueo === true) : [];
   const seccionesRiesgo = ex?.riesgos && ex.riesgos.length > 0 ? renderRiesgosAnestesia(ex.riesgos, tr) : [];
 
   return (
@@ -114,6 +131,13 @@ export function CuerpoHoja({ instrucciones, ay, ex, fecha, t, idioma = 'es', int
         </>
       )}
 
+      {lineaPruebas !== '' && (
+        <>
+          <h2>{t.pruebas.titulo}</h2>
+          <p>{lineaPruebas}</p>
+        </>
+      )}
+
       <h2>{t.cuando_llamar_titulo}</h2>
       <ul>{t.cuando_llamar_items.map((it, k) => <li key={k}>{it}</li>)}</ul>
 
@@ -152,6 +176,20 @@ export function CuerpoHoja({ instrucciones, ay, ex, fecha, t, idioma = 'es', int
             {seccionesRiesgo.map((s, k) => <SeccionRiesgo key={k} seccion={s} />)}
           </section>
         )
+      )}
+
+      {/* Preparación para la operación (punto 9): higiene, joyas y el día de la
+          intervención. El paso del bloqueo solo si hay un bloqueo entre las técnicas. */}
+      {seccionesPrep.length > 0 && (
+        <section className="preparacion">
+          {seccionesPrep.map((s, k) => (
+            <div className="preparacion-seccion" key={k}>
+              <h2>{s.titulo}</h2>
+              {s.items && <ul>{s.items.map((it, j) => <li key={j}>{it}</li>)}</ul>}
+              {s.pasos && <ol>{s.pasos.map((it, j) => <li key={j}>{it}</li>)}</ol>}
+            </div>
+          ))}
+        </section>
       )}
     </>
   );

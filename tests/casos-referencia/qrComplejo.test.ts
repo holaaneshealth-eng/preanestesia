@@ -95,8 +95,12 @@ describe('QR de máxima complejidad (§11.3)', () => {
     };
     const extrasConRiesgos: ExtrasHojaQr = {
       ...extrasBase,
-      // Peor caso: todas las secciones y las frases sueltas a la vez.
+      // Peor caso: todas las secciones y las frases sueltas a la vez, más la
+      // preparación (punto 9) y todas las pruebas no traídas (punto 3). Solo claves.
       riesgos: ['general', 'raquidea', 'epidural_combinada', 'bloqueo', 'bloqueo_hombro_brazo', 'sedacion', 'nino', 'epidural_no_especificada', 'bloqueo_ojo', 'local_sola'],
+      prep: true,
+      prepBloqueo: true,
+      pruebasNoTraidas: ['analitica', 'nt_probnp', 'troponina', 'ecg', 'rx_torax', 'ecocardiograma'],
     };
     const hacer = (ex: ExtrasHojaQr) => payloadPaciente(
       construirContenidoQrPaciente([], '000000000', IV, undefined, ex), '0.1.0', IV, X,
@@ -104,13 +108,14 @@ describe('QR de máxima complejidad (§11.3)', () => {
     const sinR = await serializar(hacer(extrasBase));
     const conR = await serializar(hacer(extrasConRiesgos));
     const delta = conR.length - sinR.length;
-    console.log(`[QR paciente §8.17] sin riesgos ${sinR.length} b · con riesgos ${conR.length} b · +${delta} b`);
+    console.log(`[QR paciente §8.17+§7+§9] sin extras ${sinR.length} b · con extras ${conR.length} b · +${delta} b`);
     // Cabe de sobra y el texto NO viaja (solo las claves): el aumento es pequeño.
     expect(cabeEnQr(conR)).toBeTrue();
-    expect(delta).toBeLessThan(200);
+    expect(delta).toBeLessThan(300);
     // El texto literal de las secciones NO debe aparecer en el QR.
     expect(conR.includes('anestesia general')).toBeFalse();
     expect(conR.includes('Náuseas')).toBeFalse();
+    expect(conR.includes('Dúchese')).toBeFalse();
     // Round-trip correcto.
     const r = await deserializar(conR, IV, '0.1.0');
     expect(r.estado).toBe('ok');

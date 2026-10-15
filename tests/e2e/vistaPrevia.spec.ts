@@ -1686,4 +1686,40 @@ test.describe('Fase ágil · comprobación previa (punto 1)', () => {
     // Avanzamos al paso de técnica.
     await expect(page.getByRole('heading', { name: /Paso 7 · Técnica anestésica prevista/ })).toBeVisible();
   });
+
+  test('punto 9 · preparación en la hoja del paciente: los tres apartados; el paso del bloqueo solo si hay bloqueo', async ({ page }) => {
+    await page.goto('/preanestesia/');
+    await page.getByRole('button', { name: 'Presencial' }).click();
+    await page.getByRole('button', { name: 'Comenzar' }).click();
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
+    await page.locator('#proc').fill('hernioplastia');
+    await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await pasoAlergiasSinAlergias(page);
+    await page.locator('#edad').fill('50');
+    await page.getByRole('radio', { name: 'Hombre' }).check();
+    await page.locator('#peso').fill('80');
+    await page.locator('#talla').fill('175');
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 3 -> 4
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 4 -> 5
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 5 -> 6
+    await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7 pruebas
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 7 pruebas -> técnica
+    // Técnica general (sin bloqueo): el paso del bloqueo NO debe aparecer.
+    await page.getByRole('checkbox', { name: 'General', exact: true }).check();
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 8 -> 9
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 9 -> 10
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 10 -> resumen
+    await pasoMtnd4NoVenezolana(page);
+
+    await page.getByRole('button', { name: /Generar hoja y QR del paciente/ }).click();
+    const prep = page.locator('section.preparacion');
+    await expect(prep.getByRole('heading', { name: 'Higiene antes de la operación' })).toBeVisible();
+    await expect(prep.getByRole('heading', { name: 'Joyas y piercings' })).toBeVisible();
+    await expect(prep.getByRole('heading', { name: 'El día de la intervención' })).toBeVisible();
+    // Sin bloqueo entre las técnicas: NO aparece el paso del bloqueo de nervios.
+    await expect(prep.getByText(/Si su anestesia incluye un bloqueo de nervios/)).toHaveCount(0);
+  });
 });

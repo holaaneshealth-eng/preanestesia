@@ -32,6 +32,19 @@
   ],
   "telefono_titulo": "Teléfono de contacto",
   "revision_pendiente_texto": "Antes de la intervención, el anestesiólogo revisará su caso y, si es necesario, se pondrá en contacto con usted.",
+  "pruebas": {
+    "titulo": "Pruebas que debe traer",
+    "con_correo": "Traiga el día de la operación el informe de {pruebas} o envíelo antes a {correo}, indicando su nombre y la fecha de la intervención.",
+    "sin_correo": "Traiga el día de la operación el informe de {pruebas}.",
+    "etiquetas": {
+      "analitica": "la analítica",
+      "nt_probnp": "el NT-proBNP",
+      "troponina": "la troponina",
+      "ecg": "el electrocardiograma",
+      "rx_torax": "la radiografía de tórax",
+      "ecocardiograma": "el ecocardiograma"
+    }
+  },
   "aviso_cambio_fecha": "Si le cambian la fecha o la hora de la intervención, abra de nuevo este código e introduzca la nueva fecha.",
   "boton_cambiar_fecha": "Me han dado la fecha o me la han cambiado",
   "nueva_fecha_label": "Fecha de la intervención",

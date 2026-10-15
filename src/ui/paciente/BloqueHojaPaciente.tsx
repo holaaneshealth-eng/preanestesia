@@ -10,7 +10,11 @@ import { derivarHechosClinicos } from '../../dominio/entrevista/hechosClinicos.t
 import { resolverAclaramiento } from '../../dominio/entrevista/aclaramiento.ts';
 import { derivarHojaExtras } from '../../dominio/entrevista/hojaExtras.ts';
 import { seccionesRiesgoAnestesia } from '../../dominio/entrevista/riesgosAnestesia.ts';
-import { posibleAnestesiaGeneral } from '../../dominio/entrevista/tecnicasAnestesia.ts';
+import { posibleAnestesiaGeneral, hayBloqueo } from '../../dominio/entrevista/tecnicasAnestesia.ts';
+import type { ClavePruebaComplementaria } from '../estadoEntrevista.ts';
+
+/** Claves de prueba cuya «la tiene pero no la ha traído» añade frase a la hoja (§7). */
+const CLAVES_PRUEBAS: ClavePruebaComplementaria[] = ['analitica', 'nt_probnp', 'troponina', 'ecg', 'rx_torax', 'ecocardiograma'];
 import { derivarPuntosValidacion } from '../../dominio/entrevista/puntosValidacion.ts';
 import { VALIDACIONES } from '../../datos/validacionesDatos.ts';
 import { MODULOS } from '../../datos/modulosDatos.ts';
@@ -141,9 +145,18 @@ export function BloqueHojaPaciente({ medicacion, intervencion, basicos, cribado,
       edadAnios: basicos.edadAnios,
       edadPediatricaMaxima: EDAD_PEDIATRICA_MAXIMA,
     });
-    const extras = riesgos.length > 0 ? { ...extrasConCons, riesgos } : extrasConCons;
+    // Pruebas que tiene pero no ha traído (punto 3): claves para la frase de la hoja.
+    const pruebasNoTraidas = CLAVES_PRUEBAS.filter((c) => entrevista.pruebasComplementarias?.[c]?.estado === 'tiene_no_trajo');
+    // Preparación (punto 9): se muestra siempre; el paso del bloqueo si hay un bloqueo.
+    const extras = {
+      ...extrasConCons,
+      ...(riesgos.length > 0 ? { riesgos } : {}),
+      prep: true,
+      ...(hayBloqueo(intervencion.tecnicas) ? { prepBloqueo: true } : {}),
+      ...(pruebasNoTraidas.length > 0 ? { pruebasNoTraidas } : {}),
+    };
     return { ayunoQr: ayunoQrDesde(planAyuno, extrasIn.pediatrico, extrasIn.situacion), extras };
-  }, [basicos, cribado, habitos, sexo, intervencion, medicacion, consentimiento, hoy, revisionPendiente, entrevista.procedimiento]);
+  }, [basicos, cribado, habitos, sexo, intervencion, medicacion, consentimiento, hoy, revisionPendiente, entrevista.procedimiento, entrevista.pruebasComplementarias]);
 
   // §3 (2026-10-04): la hoja y el QR se generan SIEMPRE, sin bloqueo por fármacos
   // pendientes. Los pendientes aparecen en la hoja con la frase única de §12

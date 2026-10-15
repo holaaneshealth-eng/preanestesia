@@ -149,6 +149,24 @@ export interface ExtrasHojaQr {
    * anticonceptiva).
    */
   sugammadex?: 'oral' | 'no_oral';
+  /**
+   * Preparación para la operación (punto 9): los apartados «Higiene», «Joyas y
+   * piercings» y «El día de la intervención» se muestran siempre que esto sea true.
+   * El texto literal lo pinta la vista desde `preparacion.json` (en el QR solo viaja
+   * esta clave).
+   */
+  prep?: boolean;
+  /**
+   * El paso 4 de «El día de la intervención» (bloqueo de nervios) solo se muestra si
+   * hay un bloqueo entre las técnicas marcadas.
+   */
+  prepBloqueo?: boolean;
+  /**
+   * Claves de pruebas que el paciente tiene pero NO ha traído (punto 3): la hoja añade
+   * la frase para traer o enviar el informe. Solo viajan las claves; el texto lo pinta
+   * la vista con el correo de config.
+   */
+  pruebasNoTraidas?: string[];
 }
 
 /** Datos del paciente que viajan en el QR (campo `d` del Payload, §8.16d). */

@@ -33,6 +33,19 @@
   ],
   "telefono_titulo": "Telèfon de contacte",
   "revision_pendiente_texto": "Abans de la intervenció, l'anestesiòleg revisarà el seu cas i, si cal, es posarà en contacte amb vostè.",
+  "pruebas": {
+    "titulo": "Proves que ha de portar",
+    "con_correo": "Porti el dia de l'operació l'informe de {pruebas} o envii'l abans a {correo}, indicant el seu nom i la data de la intervenció.",
+    "sin_correo": "Porti el dia de l'operació l'informe de {pruebas}.",
+    "etiquetas": {
+      "analitica": "l'analítica",
+      "nt_probnp": "el NT-proBNP",
+      "troponina": "la troponina",
+      "ecg": "l'electrocardiograma",
+      "rx_torax": "la radiografia de tòrax",
+      "ecocardiograma": "l'ecocardiograma"
+    }
+  },
   "aviso_cambio_fecha": "Si li canvien la data o l'hora de la intervenció, torni a obrir aquest codi i introdueixi la nova data.",
   "boton_cambiar_fecha": "M'han donat la data o me l'han canviat",
   "nueva_fecha_label": "Data de la intervenció",
