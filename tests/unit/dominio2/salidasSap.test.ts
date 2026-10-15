@@ -9,7 +9,6 @@ import type { ModuloPatologia } from '../../../src/datos/modulos.ts';
 
 function entradaSap(p: Partial<EntradaSap> = {}): EntradaSap {
   return {
-    cabecera: 'VALORACION PREANESTESICA ENFERMERIA 30/09/2026 (presencial)',
     antecedentesPatologicos: ['Cardiopatia isquemica: IAM 2021, stent farmacoactivo 03/2024', 'diabetes mellitus, HbA1c 7,2%'],
     antecedentesQuirurgicos: ['colecistectomia, 2010, anestesia general, incidencias: nvpo'],
     ...p,
@@ -17,15 +16,34 @@ function entradaSap(p: Partial<EntradaSap> = {}): EntradaSap {
 }
 
 describe('§10.1 · texto de SAP (solo antecedentes patológicos y quirúrgicos)', () => {
-  it('compone AP y AQ y NO incluye alergias, hábitos, medicación, escalas, ASA ni pruebas', () => {
+  it('empieza por AP (sin cabecera) y compone AP y AQ; no incluye alergias, hábitos, medicación, escalas ni ASA', () => {
     const r = construirSap(entradaSap());
-    expect(r.texto).toContain('AP: Cardiopatia isquemica');
+    // Sin cabecera: el texto empieza directamente por los antecedentes patológicos.
+    expect(r.texto.startsWith('AP: Cardiopatia isquemica')).toBeTrue();
+    expect(r.texto).not.toContain('VALORACION PREANESTESICA');
     expect(r.texto).toContain('AQ: colecistectomia, 2010, anestesia general');
     expect(r.texto).not.toContain('Alergias');
     expect(r.texto).not.toContain('Habitos');
-    expect(r.texto).not.toContain('Escalas');
     expect(r.texto).not.toContain('ASA');
-    expect(r.texto).not.toContain('Pruebas');
+  });
+
+  it('hemoglobina y filtrado glomerular solo si se apuntan; AUDIT-C y HEMSTOP solo si se rellenan', () => {
+    const base = construirSap(entradaSap());
+    expect(base.texto).not.toContain('Analitica');
+    expect(base.texto).not.toContain('AUDIT-C');
+    expect(base.texto).not.toContain('HEMSTOP');
+    const con = construirSap(entradaSap({
+      hemoglobina: 13.5, filtradoGlomerular: 80, fechaAnalitica: '20/09/2026',
+      auditC: { puntuacion: 2, positivo: false },
+      hemstop: { puntuacion: 0, positivo: false },
+    }));
+    expect(con.texto).toContain('Analitica: Hb 13,5 g/dL, FG 80 mL/min/1,73 (20/09/2026).');
+    expect(con.texto).toContain('AUDIT-C: 2 (negativo).');
+    expect(con.texto).toContain('HEMSTOP: 0 (negativo).');
+    // Orden: AP, AQ, analítica, AUDIT-C, HEMSTOP y consentimiento al final.
+    expect(con.texto.indexOf('Analitica')).toBeGreaterThan(con.texto.indexOf('AQ:'));
+    expect(con.texto.indexOf('AUDIT-C')).toBeGreaterThan(con.texto.indexOf('Analitica'));
+    expect(con.texto.indexOf('HEMSTOP')).toBeGreaterThan(con.texto.indexOf('AUDIT-C'));
   });
 
   it('sin antecedentes: indica que no hay patológicos ni quirúrgicos', () => {

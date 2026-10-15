@@ -129,6 +129,8 @@ export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validacione
       : null;
     const cuatroAt = habitos?.cuatroAt ? calcular4AT(habitos.cuatroAt) : null;
     const hemstop = calcularHemstop(cribado.hemstop);
+    // HEMSTOP se considera «rellenado» si se ha marcado alguna respuesta (para el SAP).
+    const hemstopRellenado = Object.values(cribado.hemstop).some((v) => v === true);
 
     // Capacidad funcional reducida (< 4 METs o DASI ≤ 34, §6.6) para la nota ** del BNP.
     const dasiCapacidad = habitos && habitos.subeDosPisos !== 'si' && habitos.itemsDasi.length > 0
@@ -358,7 +360,6 @@ export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validacione
     const otrasEnfermedadesSap = otrasEnfermedades.map(textoOtraEnfermedad);
 
     // SAP (§10.1): SOLO antecedentes patológicos y quirúrgicos (decisión del servicio).
-    const fechaTxt = intervencion.fechaHora ? fechaCorta(intervencion.fechaHora) : 'sin fecha';
     const antecedentesQuirurgicos = (antecedentes?.intervencionesPrevias ?? []).map((iq) => {
       const partes = [iq.procedimiento];
       if (iq.anio) partes.push(String(iq.anio));
@@ -366,10 +367,17 @@ export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validacione
       if (iq.incidencias.length > 0) partes.push(`incidencias: ${iq.incidencias.join(', ')}`);
       return partes.join(', ');
     });
+    // Analítica (§7): hemoglobina y filtrado glomerular del paso de pruebas, con fecha.
+    const analiticaUi = pruebasComplementarias?.analitica;
+    const fechaAnaliticaTxt = analiticaUi?.fecha ? fechaCorta(new Date(`${analiticaUi.fecha}T12:00:00`)) : undefined;
     const entradaSap: EntradaSap = {
-      cabecera: `VALORACION PREANESTESICA ENFERMERIA ${fechaTxt} (${modalidad})`,
       antecedentesPatologicos: [...resumenModulos, ...otrasEnfermedadesSap],
       antecedentesQuirurgicos,
+      ...(pruebasComplementarias?.hemoglobina !== undefined ? { hemoglobina: pruebasComplementarias.hemoglobina } : {}),
+      ...(pruebasComplementarias?.filtradoGlomerular !== undefined ? { filtradoGlomerular: pruebasComplementarias.filtradoGlomerular } : {}),
+      ...(fechaAnaliticaTxt ? { fechaAnalitica: fechaAnaliticaTxt } : {}),
+      ...(audit ? { auditC: { puntuacion: audit.puntuacion, positivo: audit.positivo } } : {}),
+      ...(cribado.hemstop && hemstopRellenado ? { hemstop: { puntuacion: hemstop.puntuacion, positivo: hemstop.positivo } } : {}),
       ...(consentimiento
         ? { consentimiento: consentimiento.estado === 'entregado'
             ? { estado: 'entregado' as const, ...(consentimiento.fecha ? { fecha: consentimiento.fecha } : {}) }
