@@ -1,6 +1,7 @@
 /**
- * Paso 7 — Técnica anestésica prevista. Si se cambia más tarde, todas las reglas y
- * salidas se recalculan (el estado de la intervención se actualiza).
+ * Paso 7 — Técnica anestésica prevista. Se pueden marcar VARIAS técnicas a la vez
+ * (p. ej. general + bloqueo, o raquídea + sedación). Si se cambia más tarde, todas
+ * las reglas y salidas se recalculan.
  * En procedimientos oftalmológicos ofrece "tópica", "retrobulbar o peribulbar",
  * "general" y "sedación". En la catarata, la técnica decide el grupo oftalmológico
  * (tópica = riesgo bajo; retrobulbar o peribulbar = moderado-alto); sin técnica
@@ -13,17 +14,16 @@ import type { Procedimiento } from '../../datos/procedimientos.ts';
 /** Subcampos de la técnica para la información de riesgos del paciente (§8.17). */
 export interface SubtecnicaRiesgos {
   subtipoNeuroaxial?: 'raquidea' | 'epidural' | 'combinada';
-  combinadaConGeneral?: boolean;
-  conSedacion?: boolean;
 }
 
 interface Props {
-  inicial: TecnicaAnestesica;
+  /** Técnicas iniciales (al volver al paso para cambiarlas). */
+  inicial: TecnicaAnestesica[];
   /** Subcampos iniciales (al volver al paso para cambiarlos). */
   inicialSub?: SubtecnicaRiesgos | undefined;
   procedimiento: Procedimiento | null;
-  /** Devuelve la técnica, (en catarata) el grupo oftalmológico y los subcampos de §8.17. */
-  onContinuar: (tecnica: TecnicaAnestesica, grupoOftalmologico: GrupoOftalmologico | undefined, sub: SubtecnicaRiesgos) => void;
+  /** Devuelve las técnicas, (en catarata) el grupo oftalmológico y los subcampos de §8.17. */
+  onContinuar: (tecnicas: TecnicaAnestesica[], grupoOftalmologico: GrupoOftalmologico | undefined, sub: SubtecnicaRiesgos) => void;
   onVolver: () => void;
 }
 
@@ -44,58 +44,70 @@ const TECNICAS_OFTALMO: Array<{ valor: TecnicaAnestesica; etiqueta: string }> = 
   { valor: 'sedacion', etiqueta: 'Sedación' },
 ];
 
-/** Grupo oftalmológico de la catarata según la técnica (undefined = aún sin elegir). */
-export function grupoCatarataPorTecnica(tecnica: TecnicaAnestesica | null): GrupoOftalmologico {
-  if (tecnica === 'topica') return 'riesgo_bajo';
-  if (tecnica === 'retrobulbar_peribulbar') return 'riesgo_moderado_alto';
-  return 'riesgo_moderado_alto'; // sin técnica elegida: se trata como moderado-alto
+/** Grupo oftalmológico de la catarata según las técnicas marcadas (undefined = sin elegir). */
+export function grupoCatarataPorTecnicas(tecnicas: TecnicaAnestesica[]): GrupoOftalmologico {
+  // Si solo se marca tópica → riesgo bajo. Cualquier otra (retrobulbar, general…) o
+  // nada → moderado-alto (el supuesto más prudente).
+  if (tecnicas.length === 1 && tecnicas[0] === 'topica') return 'riesgo_bajo';
+  return 'riesgo_moderado_alto';
 }
 
 export function PasoTecnica({ inicial, inicialSub, procedimiento, onContinuar, onVolver }: Props) {
   const esOftalmo = procedimiento?.especialidad === 'oftalmologia';
   const esCatarata = /catarata/i.test(procedimiento?.id ?? '') || /catarata/i.test(procedimiento?.nombre ?? '');
   const opciones = esOftalmo ? TECNICAS_OFTALMO : TECNICAS_GENERAL;
-  // Valor inicial válido para el tipo de procedimiento.
-  const inicialValido = opciones.some((o) => o.valor === inicial) ? inicial : null;
-  const [tecnica, setTecnica] = useState<TecnicaAnestesica | null>(inicialValido);
-  // Subcampos de §8.17 (solo deciden qué información de riesgos ve el paciente).
+  const valores = new Set(opciones.map((o) => o.valor));
+  // Técnicas iniciales válidas para el tipo de procedimiento.
+  const [tecnicas, setTecnicas] = useState<Set<TecnicaAnestesica>>(
+    new Set((inicial ?? []).filter((t) => valores.has(t))),
+  );
+  // Subcampo neuroaxial de §8.17 (solo decide qué información de riesgos ve el paciente).
   const [subtipoNeuroaxial, setSubtipoNeuroaxial] = useState<'raquidea' | 'epidural' | 'combinada' | ''>(inicialSub?.subtipoNeuroaxial ?? '');
-  const [combinadaConGeneral, setCombinadaConGeneral] = useState<boolean>(inicialSub?.combinadaConGeneral ?? false);
-  const [conSedacion, setConSedacion] = useState<boolean>(inicialSub?.conSedacion ?? false);
 
-  const esNeuroaxial = tecnica === 'neuroaxial';
-  const esBloqueo = tecnica === 'bloqueo_periferico' || tecnica === 'bloqueo_profundo';
+  const esNeuroaxial = tecnicas.has('neuroaxial');
+
+  function alternar(t: TecnicaAnestesica) {
+    setTecnicas((prev) => {
+      const s = new Set(prev);
+      if (s.has(t)) s.delete(t);
+      else {
+        // «No se sabe» es excluyente: al marcarlo se quita el resto y viceversa.
+        if (t === 'no_se_sabe') s.clear();
+        else s.delete('no_se_sabe');
+        s.add(t);
+      }
+      return s;
+    });
+  }
 
   function continuar() {
-    const t = tecnica ?? 'no_se_sabe';
-    // Los subcampos solo se guardan cuando aplican a la técnica elegida.
+    const lista = [...tecnicas];
+    const t = lista.length === 0 ? (['no_se_sabe'] as TecnicaAnestesica[]) : lista;
     const sub: SubtecnicaRiesgos = {
-      ...(esNeuroaxial && subtipoNeuroaxial ? { subtipoNeuroaxial } : {}),
-      ...((esNeuroaxial || esBloqueo) && combinadaConGeneral ? { combinadaConGeneral: true } : {}),
-      ...((esNeuroaxial || esBloqueo) && conSedacion ? { conSedacion: true } : {}),
+      ...(tecnicas.has('neuroaxial') && subtipoNeuroaxial ? { subtipoNeuroaxial } : {}),
     };
-    onContinuar(t, esCatarata ? grupoCatarataPorTecnica(tecnica) : undefined, sub);
+    onContinuar(t, esCatarata ? grupoCatarataPorTecnicas(t) : undefined, sub);
   }
 
   return (
     <section className="tarjeta" aria-labelledby="paso7-tec-tit">
       <h2 id="paso7-tec-tit">Paso 7 · Técnica anestésica prevista</h2>
-      <p>Si se cambia más tarde, las reglas de medicación y las salidas se recalculan.</p>
+      <p>Puede marcar varias (p. ej. raquídea y sedación, o general y bloqueo). Si se cambia más tarde, las reglas y las salidas se recalculan.</p>
 
       <fieldset className="campo">
-        <legend>Técnica</legend>
-        <div className="grupo-radios">
+        <legend>Técnica (puede marcar varias)</legend>
+        <div className="grupo-checks">
           {opciones.map((t) => (
-            <label key={t.valor} className={`radio-tarjeta ${tecnica === t.valor ? 'seleccionado' : ''}`}>
-              <input type="radio" name="tecnica" value={t.valor} checked={tecnica === t.valor} onChange={() => setTecnica(t.valor)} />
+            <label key={t.valor} className={`radio-tarjeta ${tecnicas.has(t.valor) ? 'seleccionado' : ''}`}>
+              <input type="checkbox" checked={tecnicas.has(t.valor)} onChange={() => alternar(t.valor)} />
               {t.etiqueta}
             </label>
           ))}
         </div>
       </fieldset>
 
-      {/* Subcampos de §8.17: solo deciden qué información de riesgos ve el paciente;
-          NO cambian ninguna regla ni plazo (para las reglas sigue siendo neuroaxial). */}
+      {/* Subcampo de §8.17: solo decide qué información de riesgos ve el paciente;
+          NO cambia ninguna regla ni plazo (para las reglas sigue siendo neuroaxial). */}
       {esNeuroaxial && (
         <fieldset className="campo">
           <legend>Tipo de técnica neuroaxial (para la información al paciente)</legend>
@@ -115,31 +127,15 @@ export function PasoTecnica({ inicial, inicialSub, procedimiento, onContinuar, o
         </fieldset>
       )}
 
-      {(esNeuroaxial || esBloqueo) && (
-        <fieldset className="campo">
-          <legend>Se combina con (para la información al paciente)</legend>
-          <div className="grupo-checks">
-            <label className={`radio-tarjeta ${combinadaConGeneral ? 'seleccionado' : ''}`}>
-              <input type="checkbox" checked={combinadaConGeneral} onChange={() => setCombinadaConGeneral((v) => !v)} />
-              Combinada con anestesia general
-            </label>
-            <label className={`radio-tarjeta ${conSedacion ? 'seleccionado' : ''}`}>
-              <input type="checkbox" checked={conSedacion} onChange={() => setConSedacion((v) => !v)} />
-              Con sedación
-            </label>
-          </div>
-        </fieldset>
-      )}
-
-      {esCatarata && tecnica === null && (
+      {esCatarata && tecnicas.size === 0 && (
         <p className="aviso aviso-atencion" role="note">
           Sin técnica elegida, la catarata se trata como oftalmología de riesgo moderado-alto (anticoagulantes como riesgo hemorrágico alto).
         </p>
       )}
-      {esCatarata && tecnica === 'topica' && (
+      {esCatarata && tecnicas.size === 1 && tecnicas.has('topica') && (
         <p className="aviso aviso-info" role="note">Catarata tópica: oftalmología de riesgo bajo; no se suspenden antiagregantes ni anticoagulantes.</p>
       )}
-      {esCatarata && tecnica === 'retrobulbar_peribulbar' && (
+      {esCatarata && tecnicas.has('retrobulbar_peribulbar') && (
         <p className="aviso aviso-info" role="note">Catarata con bloqueo retrobulbar o peribulbar: riesgo moderado-alto (anticoagulantes como riesgo hemorrágico alto).</p>
       )}
 

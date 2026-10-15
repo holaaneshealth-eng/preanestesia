@@ -546,7 +546,7 @@ function baseRp(p: Partial<EntradaRiesgoPruebas> = {}): EntradaRiesgoPruebas {
   return {
     respuestas: {}, enfermedades: new Set(), edadAnios: 40, imc: 24, hemstopPositivo: false,
     medicacionGrupos: new Set(), riesgoCardiovascular: 'intermedio', riesgoHemorragico: 'bajo',
-    neuroaxialProbable: false, tecnica: 'general', fechaIntervencion: IV,
+    neuroaxialProbable: false, tecnicas: ['general'], fechaIntervencion: IV,
     ...p,
   };
 }

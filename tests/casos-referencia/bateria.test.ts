@@ -466,7 +466,7 @@ describe('Casos G · pruebas complementarias', () => {
     return {
       respuestas: {}, enfermedades: new Set(), edadAnios: 40, imc: 24, hemstopPositivo: false,
       medicacionGrupos: new Set(), riesgoCardiovascular: 'intermedio', riesgoHemorragico: 'bajo',
-      neuroaxialProbable: false, tecnica: 'general', fechaIntervencion: IV, ...p,
+      neuroaxialProbable: false, tecnicas: ['general'], fechaIntervencion: IV, ...p,
     };
   }
   const nombres = (r: ReturnType<typeof derivarRiesgoYPruebas>) => r.pruebas.map((p) => p.prueba).sort();

@@ -17,7 +17,7 @@ function base(p: Partial<EntradaRiesgoPruebas> = {}): EntradaRiesgoPruebas {
     riesgoCardiovascular: 'intermedio', // colecistectomía laparoscópica
     riesgoHemorragico: 'bajo',
     neuroaxialProbable: false,
-    tecnica: 'general',
+    tecnicas: ['general'],
     ...p,
   };
 }

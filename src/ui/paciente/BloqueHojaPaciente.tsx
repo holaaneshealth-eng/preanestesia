@@ -10,6 +10,7 @@ import { derivarHechosClinicos } from '../../dominio/entrevista/hechosClinicos.t
 import { resolverAclaramiento } from '../../dominio/entrevista/aclaramiento.ts';
 import { derivarHojaExtras } from '../../dominio/entrevista/hojaExtras.ts';
 import { seccionesRiesgoAnestesia } from '../../dominio/entrevista/riesgosAnestesia.ts';
+import { posibleAnestesiaGeneral } from '../../dominio/entrevista/tecnicasAnestesia.ts';
 import { derivarPuntosValidacion } from '../../dominio/entrevista/puntosValidacion.ts';
 import { VALIDACIONES } from '../../datos/validacionesDatos.ts';
 import { MODULOS } from '../../datos/modulosDatos.ts';
@@ -105,8 +106,7 @@ export function BloqueHojaPaciente({ medicacion, intervencion, basicos, cribado,
       : false;
     const cuatroAtPuntuacion = habitos?.cuatroAt ? calcular4AT(habitos.cuatroAt).puntuacion : undefined;
     const semanasObst = cribado.respuestasModulos['obstetricia']?.['semanas_gestacion'];
-    const posibleAnestesiaGeneral = intervencion.tecnica === 'general' || intervencion.tecnica === 'no_se_sabe';
-    const sugammadexHoja = sugammadexParaHoja(medicacion.map((f) => ({ idFarmaco: f.idFarmaco, via: f.via })), posibleAnestesiaGeneral);
+    const sugammadexHoja = sugammadexParaHoja(medicacion.map((f) => ({ idFarmaco: f.idFarmaco, via: f.via })), posibleAnestesiaGeneral(intervencion.tecnicas));
     const extrasIn = derivarHojaExtras({
       edadAnios: basicos.edadAnios,
       ...(typeof semanasObst === 'number' ? { semanasGestacion: semanasObst } : {}),
@@ -132,11 +132,9 @@ export function BloqueHojaPaciente({ medicacion, intervencion, basicos, cribado,
     const extrasConCons = consentimiento ? { ...extrasIn.extras, cons: CONS_MAP[consentimiento.estado] } : extrasIn.extras;
     // Información de riesgos de la anestesia (§8.17): claves de las secciones a mostrar.
     const riesgos = seccionesRiesgoAnestesia({
-      tecnica: intervencion.tecnica,
+      tecnicas: intervencion.tecnicas,
       neuroaxialProbable: intervencion.neuroaxialProbable,
       ...(intervencion.subtipoNeuroaxial ? { subtipoNeuroaxial: intervencion.subtipoNeuroaxial } : {}),
-      ...(intervencion.combinadaConGeneral ? { combinadaConGeneral: true } : {}),
-      ...(intervencion.conSedacion ? { conSedacion: true } : {}),
       grupoOftalmologico: intervencion.grupoOftalmologico,
       oftalmologico: entrevista.procedimiento?.especialidad === 'oftalmologia',
       ...(entrevista.procedimiento?.bloqueoMiembroSuperior ? { bloqueoMiembroSuperior: true } : {}),

@@ -7,7 +7,7 @@
 import { cargarProcedimientos } from '../../datos/procedimientos.ts';
 import { HEMSTOP_VACIO, CONDICIONES_ESPECIALES_VACIO } from '../estadoEntrevista.ts';
 import type { EstadoEntrevista, FarmacoTomadoUi } from '../estadoEntrevista.ts';
-import type { DatosIntervencion, Modalidad } from '../../dominio/tipos.ts';
+import type { DatosIntervencion, Modalidad, TecnicaAnestesica } from '../../dominio/tipos.ts';
 import type { RespuestasModulos } from '../../datos/modulos.ts';
 
 interface CasoJson {
@@ -20,7 +20,8 @@ interface CasoJson {
     procedimientoId: string;
     fecha?: string;
     hora?: string;
-    tecnica: DatosIntervencion['tecnica'];
+    /** Técnica del caso (un solo valor en el JSON; se convierte a lista al hidratar). */
+    tecnica: TecnicaAnestesica;
     contrasteYodado: DatosIntervencion['contrasteYodado'];
   };
   basicos: EstadoEntrevista['basicos'];
@@ -63,7 +64,7 @@ function hidratar(c: CasoJson): CasoEntrenamiento {
         espacioCerrado: procedimiento.espacioCerrado,
         retina: procedimiento.retina,
         contrasteYodado: c.intervencion.contrasteYodado,
-        tecnica: c.intervencion.tecnica,
+        tecnicas: [c.intervencion.tecnica],
         ...(procedimiento.zonaDispositivo ? { zonaDispositivo: procedimiento.zonaDispositivo } : {}),
       }
     : null;

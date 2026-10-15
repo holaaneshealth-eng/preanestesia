@@ -65,24 +65,20 @@ export interface DatosIntervencion {
   retina: boolean;
   /** ¿Se prevé administrar contraste yodado? (afecta a la metformina, §8.5). */
   contrasteYodado: 'si' | 'no' | 'no_se_sabe';
-  /** Técnica anestésica prevista (se elige en el paso 7). */
-  tecnica: TecnicaAnestesica;
+  /**
+   * Técnicas anestésicas previstas (se eligen en el paso 7). Puede haber VARIAS a la
+   * vez (p. ej. general + bloqueo, o raquídea + sedación). Para las reglas: es
+   * neuroaxial si alguna lo es (o «no se sabe» + neuroaxial probable), y es bloqueo
+   * profundo si alguna lo es. Para la información de riesgos (§8.17) se muestran las
+   * secciones de todas las técnicas marcadas.
+   */
+  tecnicas: TecnicaAnestesica[];
   /**
    * Subtipo de la técnica neuroaxial, SOLO para elegir qué información de riesgos
    * ve el paciente (§8.17). NO cambia ninguna regla ni plazo: para las reglas, una
    * técnica neuroaxial sigue siendo «neuroaxial». undefined = sin especificar.
    */
   subtipoNeuroaxial?: 'raquidea' | 'epidural' | 'combinada';
-  /**
-   * La técnica (neuroaxial o bloqueo periférico/profundo) se combina con anestesia
-   * general. SOLO para la información de riesgos del paciente (§8.17); no toca reglas.
-   */
-  combinadaConGeneral?: boolean;
-  /**
-   * La técnica (neuroaxial o bloqueo periférico/profundo) se acompaña de sedación.
-   * SOLO para la información de riesgos del paciente (§8.17); no toca reglas.
-   */
-  conSedacion?: boolean;
   /** Zona del procedimiento respecto a un dispositivo cardiaco implantable (§5.1 bis). */
   zonaDispositivo?: 'supraumbilical' | 'infraumbilical' | 'cardiaca' | 'ocular' | 'endoscopia' | 'dental' | 'litotricia' | 'neurocirugia';
 }

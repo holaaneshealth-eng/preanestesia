@@ -14,6 +14,7 @@ import type { RespuestasModulos } from '../../datos/modulos.ts';
 import { derivarHechosClinicos } from '../../dominio/entrevista/hechosClinicos.ts';
 import { resolverAclaramiento, aclaramientoDeMasDe3Meses } from '../../dominio/entrevista/aclaramiento.ts';
 import { textoTecnicaPrevista } from '../../dominio/entrevista/riesgosAnestesia.ts';
+import { posibleAnestesiaGeneral } from '../../dominio/entrevista/tecnicasAnestesia.ts';
 import { emitirEfectosModulos } from '../../dominio/entrevista/efectosModulos.ts';
 import { derivarPuntosValidacion } from '../../dominio/entrevista/puntosValidacion.ts';
 import { VALIDACIONES } from '../../datos/validacionesDatos.ts';
@@ -147,7 +148,7 @@ export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validacione
       hemstopPositivo: hemstop.positivo,
       medicacionGrupos: new Set((medicacion ?? []).map((f) => grupoAntitrombotico(f.idRegla)).filter((g): g is string => g !== null)),
       riesgoCardiovascular: intervencion.riesgoCardiovascular, riesgoHemorragico: intervencion.riesgoHemorragico,
-      neuroaxialProbable: intervencion.neuroaxialProbable, tecnica: intervencion.tecnica,
+      neuroaxialProbable: intervencion.neuroaxialProbable, tecnicas: intervencion.tecnicas,
       fragilidad: habitos?.cfs !== undefined && habitos.cfs >= 5,
       capacidadFuncionalReducida,
       fechaIntervencion: intervencion.fechaHora ?? null,
@@ -162,8 +163,8 @@ export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validacione
       },
     });
 
-    const posibleAnestesiaGeneral = intervencion.tecnica === 'general' || intervencion.tecnica === 'no_se_sabe';
-    const sugammadex = sugammadexParaHoja((medicacion ?? []).map((f) => ({ idFarmaco: f.idFarmaco, via: f.via })), posibleAnestesiaGeneral);
+    const posibleAnestesiaGeneralVal = posibleAnestesiaGeneral(intervencion.tecnicas);
+    const sugammadex = sugammadexParaHoja((medicacion ?? []).map((f) => ({ idFarmaco: f.idFarmaco, via: f.via })), posibleAnestesiaGeneralVal);
     const extras = derivarHojaExtras({
       edadAnios: basicos.edadAnios, ...(semanasGestacion !== undefined ? { semanasGestacion } : {}),
       enfermedades, respuestas, tabacoActivo: habitos?.tabaco === 'activo', auditPositivo: audit?.positivo ?? false,
@@ -399,10 +400,8 @@ export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validacione
     }
 
     const tecnicaPrevista = textoTecnicaPrevista({
-      tecnica: intervencion.tecnica,
+      tecnicas: intervencion.tecnicas,
       ...(intervencion.subtipoNeuroaxial ? { subtipoNeuroaxial: intervencion.subtipoNeuroaxial } : {}),
-      ...(intervencion.combinadaConGeneral ? { combinadaConGeneral: true } : {}),
-      ...(intervencion.conSedacion ? { conSedacion: true } : {}),
     });
 
     return { asa, escalas, alertas, notas, plan, pruebas: rp.pruebas, claseRiesgo: rp.clase, ayuno, sap, puntosValidacion, tecnicaPrevista };

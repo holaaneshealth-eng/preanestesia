@@ -352,7 +352,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7 técnica
 
     // Paso 7: técnica neuroaxial (dispara también la alerta amarilla del stent + técnica).
-    await page.getByRole('radio', { name: /Neuroaxial/ }).check();
+    await page.getByRole('checkbox', { name: /Neuroaxial/ }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
     await page.getByRole('button', { name: 'Continuar' }).click(); // 8 -> 9
     await page.getByRole('button', { name: 'Continuar' }).click(); // 9 -> 10
@@ -432,7 +432,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
 
     // Paso 7: técnica general (para que aplique la advertencia del sugammadex).
-    await page.getByRole('radio', { name: 'General', exact: true }).check();
+    await page.getByRole('checkbox', { name: 'General', exact: true }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
 
     // Paso 8: anticonceptivo oral combinado.
@@ -745,7 +745,7 @@ test.describe('Vista previa', () => {
 
     // Paso 7: técnica tópica → catarata de riesgo bajo (no se suspenden anticoagulantes).
     await expect(page.getByRole('heading', { name: /Paso 7 · Técnica anestésica prevista/ })).toBeVisible();
-    await page.getByRole('radio', { name: 'Tópica' }).check();
+    await page.getByRole('checkbox', { name: 'Tópica' }).check();
     await expect(page.getByText(/no se suspenden/i)).toBeVisible();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
 
@@ -758,7 +758,8 @@ test.describe('Vista previa', () => {
     // Volver al paso 7 y cambiar a retrobulbar/peribulbar → riesgo moderado-alto.
     await page.getByRole('button', { name: 'Volver' }).click(); // 8 -> 7 técnica
     await expect(page.getByRole('heading', { name: /Paso 7 · Técnica anestésica prevista/ })).toBeVisible();
-    await page.getByRole('radio', { name: 'Retrobulbar o peribulbar' }).check();
+    await page.getByRole('checkbox', { name: 'Tópica' }).uncheck();
+    await page.getByRole('checkbox', { name: 'Retrobulbar o peribulbar' }).check();
     await expect(page.getByText(/moderado-alto/)).toBeVisible();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
 
@@ -993,18 +994,18 @@ test.describe('Vista previa', () => {
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
 
-    // Paso 7: técnica neuroaxial → subtipo raquídea + «con sedación».
-    await page.getByRole('radio', { name: /Neuroaxial/ }).check();
+    // Paso 7: marcar neuroaxial + sedación → subtipo raquídea.
+    await page.getByRole('checkbox', { name: /Neuroaxial/ }).check();
+    await page.getByRole('checkbox', { name: 'Sedación' }).check();
     await page.getByRole('radio', { name: 'Raquídea (intradural)' }).check();
-    await page.getByRole('checkbox', { name: 'Con sedación' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
     await page.getByRole('button', { name: 'Continuar' }).click(); // 8 medicación -> 9
     await page.getByRole('button', { name: 'Continuar' }).click(); // 9 vía aérea -> 10
     await page.getByRole('button', { name: 'Continuar' }).click(); // 10 consentimiento -> 11
     await pasoMtnd4NoVenezolana(page); // 11 mtND4 -> resumen
 
-    // El resumen del anestesiólogo muestra la técnica prevista con sus subcampos.
-    await expect(page.getByText(/Técnica prevista:\s*Neuroaxial \(raquídea\), con sedación/)).toBeVisible();
+    // El resumen del anestesiólogo muestra las técnicas previstas con su subtipo.
+    await expect(page.getByText(/Técnica prevista:\s*Neuroaxial \(raquídea\) \+ sedación/)).toBeVisible();
 
     // Generar la hoja del paciente: anexo de riesgos con raquídea y sedación.
     await page.getByRole('button', { name: /Generar hoja y QR del paciente/ }).click();
@@ -1369,7 +1370,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
-    await page.getByRole('radio', { name: /Neuroaxial/ }).check();
+    await page.getByRole('checkbox', { name: /Neuroaxial/ }).check();
     await page.getByRole('radio', { name: 'Raquídea (intradural)' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
     await page.getByRole('button', { name: 'Continuar' }).click(); // 8 -> 9
@@ -1522,5 +1523,43 @@ test.describe('Fase ágil · comprobación previa (punto 1)', () => {
     // Ninguno bloquea: se puede continuar sin rellenar dosis/frecuencia/hora.
     await page.getByRole('button', { name: 'Continuar' }).click();
     await expect(page.getByRole('heading', { name: /Paso 9 · Vía aérea|Paso 10 · Consentimiento/ })).toBeVisible();
+  });
+
+  test('punto 6 · técnica múltiple: marcar general y bloqueo a la vez', async ({ page }) => {
+    await page.goto('/preanestesia/');
+    await page.getByRole('button', { name: 'Presencial' }).click();
+    await page.getByRole('button', { name: 'Comenzar' }).click();
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
+    await page.locator('#proc').fill('Artroplastia total de rodilla');
+    await page.getByRole('button', { name: /Artroplastia total de rodilla/i }).first().click();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await pasoAlergiasSinAlergias(page);
+    await page.locator('#edad').fill('50');
+    await page.getByRole('radio', { name: 'Hombre' }).check();
+    await page.locator('#peso').fill('80');
+    await page.locator('#talla').fill('175');
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 3 -> 4
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 4 -> 5
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 5 -> 6
+    await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7
+
+    // Paso 7: marcar DOS técnicas a la vez (general + bloqueo periférico).
+    await page.getByRole('checkbox', { name: 'General', exact: true }).check();
+    await page.getByRole('checkbox', { name: 'Bloqueo periférico' }).check();
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 8 -> 9
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 9 -> 10
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 10 -> 11
+    await pasoMtnd4NoVenezolana(page);
+
+    // El resumen lista las dos técnicas.
+    await expect(page.getByText(/Técnica prevista:\s*Anestesia general \+ bloqueo periférico/)).toBeVisible();
+
+    // La hoja del paciente muestra las secciones de riesgos de ambas (general y bloqueo).
+    await page.getByRole('button', { name: /Generar hoja y QR del paciente/ }).click();
+    const anexo = page.locator('section.anexo.riesgos-anestesia');
+    await expect(anexo.getByRole('heading', { name: 'Anestesia general' })).toBeVisible();
+    await expect(anexo.getByRole('heading', { name: 'Bloqueo de nervios (anestesia locorregional)' })).toBeVisible();
   });
 });

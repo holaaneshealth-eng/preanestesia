@@ -44,7 +44,7 @@ export interface EntradaRiesgoPruebas {
   riesgoCardiovascular: RiesgoCardiovascular;
   riesgoHemorragico: RiesgoHemorragico;
   neuroaxialProbable: boolean;
-  tecnica: TecnicaAnestesica;
+  tecnicas: TecnicaAnestesica[];
   /** Fragilidad (CFS ≥ 5), para la nota ** del BNP. Opcional. */
   fragilidad?: boolean;
   /** Capacidad funcional reducida (< 4 METs o DASI ≤ 34), para la nota ** del BNP. Opcional. */
@@ -171,9 +171,9 @@ export function derivarFactoresPruebas(e: EntradaRiesgoPruebas): FactoresPruebas
 
   const anestesiaRegionalPosible =
     e.neuroaxialProbable ||
-    e.tecnica === 'neuroaxial' ||
-    e.tecnica === 'bloqueo_periferico' ||
-    e.tecnica === 'bloqueo_profundo';
+    e.tecnicas.includes('neuroaxial') ||
+    e.tecnicas.includes('bloqueo_periferico') ||
+    e.tecnicas.includes('bloqueo_profundo');
 
   const asma = r['asma_epoc'] ?? {};
   const supuestoRxTorax = asma.sintomas_respiratorios_nuevos === true;

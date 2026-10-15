@@ -29,11 +29,10 @@ export type ClaveRiesgo =
   | 'bloqueo_hombro_brazo';
 
 export interface EntradaRiesgos {
-  tecnica: DatosIntervencion['tecnica'];
+  /** Técnicas marcadas en el paso 7 (puede haber varias). */
+  tecnicas: DatosIntervencion['tecnicas'];
   neuroaxialProbable: boolean;
   subtipoNeuroaxial?: DatosIntervencion['subtipoNeuroaxial'];
-  combinadaConGeneral?: boolean;
-  conSedacion?: boolean;
   grupoOftalmologico: DatosIntervencion['grupoOftalmologico'];
   /** El procedimiento es oftalmológico (especialidad). */
   oftalmologico: boolean;
@@ -45,48 +44,32 @@ export interface EntradaRiesgos {
 }
 
 /**
- * Devuelve las claves de sección a mostrar, en orden de presentación. Vacío si no
- * procede mostrar nada (p. ej. técnica desconocida sin pistas, o sin datos).
+ * Devuelve las claves de sección a mostrar, en orden de presentación. Con varias
+ * técnicas marcadas, se muestran las secciones de TODAS. Vacío si no procede nada.
  */
 export function seccionesRiesgoAnestesia(e: EntradaRiesgos): ClaveRiesgo[] {
   const esNino = e.edadAnios <= e.edadPediatricaMaxima;
   const claves: ClaveRiesgo[] = [];
-
   // La sección «general» se sustituye por «nino» en pacientes pediátricos.
   const seccionGeneral: ClaveRiesgo = esNino ? 'nino' : 'general';
   const anadir = (c: ClaveRiesgo) => { if (!claves.includes(c)) claves.push(c); };
 
+  const tecnicas = e.tecnicas;
+  const esNeuroaxial = tecnicas.includes('neuroaxial');
+  const esBloqueo = tecnicas.includes('bloqueo_periferico') || tecnicas.includes('bloqueo_profundo');
+
   // Oftalmología: tópica → sedación; retrobulbar/peribulbar → sedación + bloqueo del ojo.
   if (e.oftalmologico) {
-    if (e.tecnica === 'topica') { anadir('sedacion'); return claves; }
-    if (e.tecnica === 'retrobulbar_peribulbar') { anadir('sedacion'); anadir('bloqueo_ojo'); return claves; }
-    // general/sedación oftálmicas siguen la lógica común de abajo.
+    if (tecnicas.includes('topica')) anadir('sedacion');
+    if (tecnicas.includes('retrobulbar_peribulbar')) { anadir('sedacion'); anadir('bloqueo_ojo'); }
+    if (tecnicas.includes('general')) anadir(seccionGeneral);
+    if (tecnicas.includes('sedacion')) anadir('sedacion');
+    // En oftalmología no hay neuroaxial/bloqueo/local; si ya hay algo, devolver.
+    if (claves.length > 0) return claves;
   }
 
-  // Técnica neuroaxial efectiva (incluye «no se sabe» con neuroaxial probable).
-  const esNeuroaxial = e.tecnica === 'neuroaxial' || (e.tecnica === 'no_se_sabe' && e.neuroaxialProbable);
-  const esBloqueo = e.tecnica === 'bloqueo_periferico' || e.tecnica === 'bloqueo_profundo';
-
-  switch (e.tecnica) {
-    case 'general':
-      anadir(seccionGeneral);
-      break;
-    case 'sedacion':
-      anadir('sedacion');
-      break;
-    case 'local':
-      // Local sin sedación: solo la frase breve (ninguna sección de riesgos extensa).
-      anadir('local_sola');
-      break;
-    case 'no_se_sabe':
-      // Sin técnica decidida: si NO es neuroaxial probable, se da la información más
-      // general (anestesia general, o la de niño). Si es neuroaxial probable, se trata
-      // como neuroaxial (más abajo), sin la sección general.
-      if (!e.neuroaxialProbable) anadir(seccionGeneral);
-      break;
-    default:
-      break;
-  }
+  if (tecnicas.includes('general')) anadir(seccionGeneral);
+  if (tecnicas.includes('sedacion')) anadir('sedacion');
 
   if (esNeuroaxial) {
     if (e.subtipoNeuroaxial === 'raquidea') {
@@ -107,46 +90,53 @@ export function seccionesRiesgoAnestesia(e: EntradaRiesgos): ClaveRiesgo[] {
     if (e.bloqueoMiembroSuperior) anadir('bloqueo_hombro_brazo');
   }
 
-  // Combinaciones (solo para neuroaxial y bloqueo): «con general» y «con sedación».
-  if ((esNeuroaxial || esBloqueo) && e.combinadaConGeneral) anadir(seccionGeneral);
-  if ((esNeuroaxial || esBloqueo) && e.conSedacion) anadir('sedacion');
+  // Anestesia local: solo la frase breve, y solo si no hay ninguna otra sección.
+  if (tecnicas.includes('local') && claves.length === 0) anadir('local_sola');
+
+  // «No se sabe» sin ninguna otra técnica efectiva: si NO es neuroaxial probable, se
+  // da la información general (o la de niño); si es probable, se trata como neuroaxial.
+  if (tecnicas.includes('no_se_sabe') && claves.length === 0) {
+    if (e.neuroaxialProbable) {
+      anadir('raquidea');
+      anadir('epidural_no_especificada');
+    } else {
+      anadir(seccionGeneral);
+    }
+  }
 
   return claves;
 }
 
 /**
- * Texto legible de la técnica prevista para el resumen del anestesiólogo (§8.17),
- * incluyendo los subcampos (subtipo neuroaxial, «con general», «con sedación»).
+ * Texto legible de las técnicas previstas para el resumen del anestesiólogo (§8.17).
+ * Con varias técnicas, se listan todas; el subtipo acompaña a la neuroaxial.
  */
 export function textoTecnicaPrevista(e: {
-  tecnica: DatosIntervencion['tecnica'];
+  tecnicas: DatosIntervencion['tecnicas'];
   subtipoNeuroaxial?: DatosIntervencion['subtipoNeuroaxial'];
-  combinadaConGeneral?: boolean;
-  conSedacion?: boolean;
 }): string {
-  const BASE: Record<DatosIntervencion['tecnica'], string> = {
-    general: 'Anestesia general',
-    sedacion: 'Sedación',
-    neuroaxial: 'Neuroaxial',
-    bloqueo_periferico: 'Bloqueo periférico',
-    bloqueo_profundo: 'Bloqueo profundo',
-    local: 'Anestesia local',
-    topica: 'Tópica',
-    retrobulbar_peribulbar: 'Retrobulbar o peribulbar',
-    no_se_sabe: 'Sin decidir',
+  const BASE: Record<DatosIntervencion['tecnicas'][number], string> = {
+    general: 'anestesia general',
+    sedacion: 'sedación',
+    neuroaxial: 'neuroaxial',
+    bloqueo_periferico: 'bloqueo periférico',
+    bloqueo_profundo: 'bloqueo profundo',
+    local: 'anestesia local',
+    topica: 'tópica',
+    retrobulbar_peribulbar: 'retrobulbar o peribulbar',
+    no_se_sabe: 'sin decidir',
   };
-  let txt = BASE[e.tecnica];
-  if (e.tecnica === 'neuroaxial') {
-    const SUB: Record<NonNullable<DatosIntervencion['subtipoNeuroaxial']>, string> = {
-      raquidea: 'raquídea',
-      epidural: 'epidural',
-      combinada: 'combinada raquídea-epidural',
-    };
-    if (e.subtipoNeuroaxial) txt += ` (${SUB[e.subtipoNeuroaxial]})`;
-  }
-  const extras: string[] = [];
-  if (e.combinadaConGeneral) extras.push('combinada con anestesia general');
-  if (e.conSedacion) extras.push('con sedación');
-  if (extras.length > 0) txt += `, ${extras.join(' y ')}`;
-  return txt;
+  if (e.tecnicas.length === 0) return 'Sin decidir';
+  const SUB: Record<NonNullable<DatosIntervencion['subtipoNeuroaxial']>, string> = {
+    raquidea: 'raquídea',
+    epidural: 'epidural',
+    combinada: 'combinada raquídea-epidural',
+  };
+  const partes = e.tecnicas.map((t) => {
+    if (t === 'neuroaxial' && e.subtipoNeuroaxial) return `${BASE[t]} (${SUB[e.subtipoNeuroaxial]})`;
+    return BASE[t];
+  });
+  // Primera letra en mayúscula.
+  const txt = partes.join(' + ');
+  return txt.charAt(0).toUpperCase() + txt.slice(1);
 }

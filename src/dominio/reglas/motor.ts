@@ -15,6 +15,7 @@ import type {
   Via,
 } from '../tipos.ts';
 import { diasAHoras } from '../fechas/plazos.ts';
+import { esNeuroaxialEfectiva, hayBloqueoProfundo } from '../entrevista/tecnicasAnestesia.ts';
 import {
   ultimaTomaPorHoras,
   ultimaTomaPorDias,
@@ -32,11 +33,10 @@ export function construirContexto(
   indicacion?: string,
   fechaReferencia?: Date,
 ): ContextoReglas {
-  // Técnica efectiva: "no se sabe" + neuroaxial probable ⇒ tratar como neuroaxial (R3.2.3).
-  const neuroaxial =
-    intervencion.tecnica === 'neuroaxial' ||
-    (intervencion.tecnica === 'no_se_sabe' && intervencion.neuroaxialProbable);
-  const bloqueoProfundo = intervencion.tecnica === 'bloqueo_profundo';
+  // Técnica efectiva: puede haber varias marcadas. Es neuroaxial si alguna lo es (o
+  // "no se sabe" + neuroaxial probable, R3.2.3); bloqueo profundo si alguna lo es.
+  const neuroaxial = esNeuroaxialEfectiva(intervencion.tecnicas, intervencion.neuroaxialProbable);
+  const bloqueoProfundo = hayBloqueoProfundo(intervencion.tecnicas);
 
   // El contexto con fechas solo se construye cuando hay fecha de intervención.
   // Sin fecha (§8.16), las instrucciones se generan como margen (véase la hoja

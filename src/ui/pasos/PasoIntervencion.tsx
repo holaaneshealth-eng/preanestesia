@@ -92,7 +92,7 @@ export function PasoIntervencion({ onContinuar, onVolver }: Props) {
       espacioCerrado: proc.espacioCerrado,
       retina: proc.retina,
       contrasteYodado,
-      tecnica: 'no_se_sabe',
+      tecnicas: ['no_se_sabe'],
       ...(proc.zonaDispositivo ? { zonaDispositivo: proc.zonaDispositivo } : {}),
     };
     onContinuar(datos, proc);

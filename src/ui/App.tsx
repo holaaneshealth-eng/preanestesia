@@ -352,27 +352,21 @@ export function App() {
         {/* 7 · Técnica anestésica prevista */}
         {pantalla === 'tecnica' && (
           <PasoTecnica
-            inicial={intervencion?.tecnica ?? 'no_se_sabe'}
-            inicialSub={intervencion ? {
-              ...(intervencion.subtipoNeuroaxial ? { subtipoNeuroaxial: intervencion.subtipoNeuroaxial } : {}),
-              ...(intervencion.combinadaConGeneral ? { combinadaConGeneral: true } : {}),
-              ...(intervencion.conSedacion ? { conSedacion: true } : {}),
-            } : undefined}
+            inicial={intervencion?.tecnicas ?? []}
+            inicialSub={intervencion?.subtipoNeuroaxial ? { subtipoNeuroaxial: intervencion.subtipoNeuroaxial } : undefined}
             procedimiento={procedimiento}
             onVolver={() => setPantalla('enfermedades')}
-            onContinuar={(tecnica, grupoOft, sub) => {
+            onContinuar={(tecnicas, grupoOft, sub) => {
               setEntrevista((e) => (e.intervencion
                 ? { ...e, intervencion: (() => {
-                    // Se parte de la intervención SIN los subcampos de §8.17 (así se
-                    // borran los que ya no apliquen) y se añaden solo los presentes.
-                    const { subtipoNeuroaxial: _s, combinadaConGeneral: _g, conSedacion: _c, ...resto } = e.intervencion;
+                    // Se parte de la intervención SIN el subcampo de §8.17 (así se borra
+                    // si ya no aplica) y se añade solo si está presente.
+                    const { subtipoNeuroaxial: _s, ...resto } = e.intervencion;
                     return {
                       ...resto,
-                      tecnica,
+                      tecnicas,
                       ...(grupoOft ? { grupoOftalmologico: grupoOft } : {}),
                       ...(sub.subtipoNeuroaxial ? { subtipoNeuroaxial: sub.subtipoNeuroaxial } : {}),
-                      ...(sub.combinadaConGeneral ? { combinadaConGeneral: true } : {}),
-                      ...(sub.conSedacion ? { conSedacion: true } : {}),
                     };
                   })() }
                 : e));
@@ -453,7 +447,7 @@ export function App() {
             <ul className="resumen-lista">
               <li><strong>Procedimiento:</strong> {procedimiento.nombre} ({procedimiento.especialidad.replace(/_/g, ' ')})</li>
               <li><strong>Fecha y hora:</strong> {intervencion.fechaHora ? `${fechaLegible(intervencion.fechaHora)}${intervencion.horaAsumida ? ' (hora asumida)' : ''}` : 'aún no conocida (las instrucciones se darán como margen)'}</li>
-              <li><strong>Técnica:</strong> {intervencion.tecnica.replace(/_/g, ' ')}</li>
+              <li><strong>Técnica:</strong> {intervencion.tecnicas.map((t) => t.replace(/_/g, ' ')).join(' + ') || 'sin decidir'}</li>
               <li><strong>Riesgos:</strong> cardiovascular {intervencion.riesgoCardiovascular}, hemorrágico {intervencion.riesgoHemorragico}</li>
             </ul>
 
