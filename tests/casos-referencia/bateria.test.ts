@@ -471,10 +471,11 @@ describe('Casos G · pruebas complementarias', () => {
   }
   const nombres = (r: ReturnType<typeof derivarRiesgoYPruebas>) => r.pruebas.map((p) => p.prueba).sort();
 
-  it('G1 varón 70 HTA, METs≥4, prótesis rodilla (intermedio): clase bajo-moderado → hemograma, coag, bioquímica, ECG; sin Rx; sin BNP', () => {
+  it('G1 varón 70 HTA, METs≥4, prótesis rodilla (intermedio): clase bajo-moderado → hemograma, coag, bioquímica, ECG, troponina (ESC 2022, ≥65); sin Rx; sin BNP', () => {
     const r = derivarRiesgoYPruebas(baseRp({ edadAnios: 70, enfermedades: new Set(['hta']) }));
     expect(r.clase.clase).toBe('bajo-moderado');
-    expect(nombres(r)).toEqual(['bioquimica', 'coagulacion', 'ecg', 'hemograma']);
+    // Troponina basal por ESC 2022 (edad ≥ 65 + cirugía intermedia).
+    expect(nombres(r)).toEqual(['bioquimica', 'coagulacion', 'ecg', 'hemograma', 'troponina']);
   });
 
   it('G1b HTA aislada NO cuenta como comorbilidad CV: no se pide BNP', () => {
@@ -498,6 +499,7 @@ describe('Casos G · pruebas complementarias', () => {
     const n = nombres(r);
     expect(n).toContain('rx_torax');
     expect(n).toContain('bnp'); // comorbilidad CV significativa (IC) + cirugía intermedia
+    expect(n).toContain('troponina'); // ESC 2022: comorbilidad CV + cirugía intermedia
     expect(n).toContain('coagulacion'); // caducada (14 días): se pide
     expect(n).not.toContain('ecg'); // vigente (90 días): no se repite
     expect(r.vigencia.ecg).toBeTrue();

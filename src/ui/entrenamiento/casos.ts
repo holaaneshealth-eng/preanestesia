@@ -84,6 +84,7 @@ function hidratar(c: CasoJson): CasoEntrenamiento {
       condicionesEspeciales: { ...CONDICIONES_ESPECIALES_VACIO },
       otrasEnfermedades: c.cribado?.otrasEnfermedades ?? [],
     },
+    pruebasComplementarias: null,
     medicacion: c.medicacion ?? [],
     viaAerea: c.viaAerea ?? null,
     consentimiento: c.consentimiento ?? null,

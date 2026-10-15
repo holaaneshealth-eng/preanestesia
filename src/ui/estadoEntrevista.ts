@@ -131,6 +131,56 @@ export const PRUEBAS_RECIENTES: Array<{ id: keyof PruebasRecientesUi; etiqueta: 
   { id: 'ecocardiograma', etiqueta: 'Ecocardiograma' },
 ];
 
+/**
+ * Paso «Pruebas complementarias» (§7, fase ágil). Para cada prueba la enfermera elige
+ * si el paciente la tiene y la ha traído, la tiene pero no la ha traído, o no la tiene,
+ * con fecha opcional. De la analítica general se anotan, opcionales, la hemoglobina y
+ * el filtrado glomerular. Nada es obligatorio.
+ */
+export type EstadoPruebaComplementaria = 'tiene_y_trajo' | 'tiene_no_trajo' | 'no_tiene';
+
+export interface PruebaComplementariaUi {
+  estado?: EstadoPruebaComplementaria;
+  /** Fecha (ISO yyyy-mm-dd) de la prueba, opcional. */
+  fecha?: string;
+}
+
+/** Clave de cada prueba del paso de pruebas complementarias. */
+export type ClavePruebaComplementaria = 'analitica' | 'nt_probnp' | 'troponina' | 'ecg' | 'rx_torax' | 'ecocardiograma';
+
+export interface PruebasComplementariasUi {
+  analitica: PruebaComplementariaUi;
+  nt_probnp: PruebaComplementariaUi;
+  troponina: PruebaComplementariaUi;
+  ecg: PruebaComplementariaUi;
+  rx_torax: PruebaComplementariaUi;
+  ecocardiograma: PruebaComplementariaUi;
+  /** Hemoglobina (g/dL) de la analítica, opcional. */
+  hemoglobina?: number;
+  /** Filtrado glomerular (mL/min/1,73 m²) de la analítica, opcional. */
+  filtradoGlomerular?: number;
+}
+
+/** Catálogo de pruebas del paso de pruebas complementarias, con su etiqueta. */
+export const PRUEBAS_COMPLEMENTARIAS: Array<{ id: ClavePruebaComplementaria; etiqueta: string }> = [
+  { id: 'analitica', etiqueta: 'Analítica general (hemograma, bioquímica y coagulación)' },
+  { id: 'nt_probnp', etiqueta: 'NT-proBNP' },
+  { id: 'troponina', etiqueta: 'Troponina ultrasensible' },
+  { id: 'ecg', etiqueta: 'Electrocardiograma (ECG)' },
+  { id: 'rx_torax', etiqueta: 'Radiografía de tórax' },
+  { id: 'ecocardiograma', etiqueta: 'Ecocardiograma' },
+];
+
+/** Estado inicial vacío del paso de pruebas complementarias. */
+export const PRUEBAS_COMPLEMENTARIAS_VACIO: PruebasComplementariasUi = {
+  analitica: {},
+  nt_probnp: {},
+  troponina: {},
+  ecg: {},
+  rx_torax: {},
+  ecocardiograma: {},
+};
+
 /** Cribado por aparatos del paso 7 (R3.2.21–R3.2.23). */
 export interface CribadoUi {
   /** «Ninguna enfermedad conocida» marcado explícitamente (R3.2.22). */
@@ -316,6 +366,8 @@ export interface EstadoEntrevista {
   alergias: AlergiasUi | null;
   habitos: HabitosUi | null;
   cribado: CribadoUi | null;
+  /** Paso «Pruebas complementarias» (§7, fase ágil), entre enfermedades y técnica. */
+  pruebasComplementarias: PruebasComplementariasUi | null;
   medicacion: FarmacoTomadoUi[] | null;
   viaAerea: DatosViaAereaUi | null;
   consentimiento: ConsentimientoUi | null;
@@ -378,6 +430,7 @@ export const ESTADO_INICIAL: EstadoEntrevista = {
   alergias: null,
   habitos: null,
   cribado: null,
+  pruebasComplementarias: null,
   medicacion: null,
   viaAerea: null,
   consentimiento: null,

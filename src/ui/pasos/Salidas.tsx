@@ -21,6 +21,7 @@ import { VALIDACIONES } from '../../datos/validacionesDatos.ts';
 import { construirHechosValidacion } from './hechosValidacionUi.ts';
 import { derivarHojaExtras } from '../../dominio/entrevista/hojaExtras.ts';
 import { derivarRiesgoYPruebas } from '../../dominio/entrevista/riesgoYPruebas.ts';
+import { fechasPruebasRecientes } from './entradaPruebasUi.ts';
 import { construirPlanPaciente } from '../paciente/construirPlanUi.ts';
 import { construirContexto } from '../../dominio/reglas/motor.ts';
 import { evaluarStent } from '../../dominio/reglas/antiagregantes.ts';
@@ -79,7 +80,7 @@ function fechaCorta(d: Date): string {
 }
 
 export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validaciones, onValidarPunto, fechaReferencia }: Props) {
-  const { intervencion, procedimiento, basicos, antecedentes, mtnd4, alergias, habitos, cribado, medicacion, viaAerea, consentimiento } = entrevista;
+  const { intervencion, procedimiento, basicos, antecedentes, mtnd4, alergias, habitos, cribado, pruebasComplementarias, medicacion, viaAerea, consentimiento } = entrevista;
   const [soloAscii, setSoloAscii] = useState(false);
   const [asaManual, setAsaManual] = useState<ClaseAsa | ''>('');
   const [nombresPend, setNombresPend] = useState<Record<number, string>>({});
@@ -134,14 +135,8 @@ export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validacione
       ? calcularDasi(habitos.itemsDasi as never[])
       : null;
     const capacidadFuncionalReducida = habitos?.subeDosPisos === 'no' || (dasiCapacidad?.capacidadReducida ?? false);
-    // Fechas de pruebas recientes (§7.4): ISO yyyy-mm-dd → Date (mediodía local, evita desfases de zona).
-    const pr = cribado.pruebasRecientes ?? {};
-    const fechaPrueba = (iso?: string): Date | undefined => {
-      if (!iso) return undefined;
-      const d = new Date(`${iso}T12:00:00`);
-      return Number.isNaN(d.getTime()) ? undefined : d;
-    };
-    const ecoFecha = fechaPrueba(pr.ecocardiograma);
+    // Fechas de pruebas recientes (§7.4) desde el paso «Pruebas complementarias».
+    const fechasRecientes = fechasPruebasRecientes(pruebasComplementarias);
 
     const rp = derivarRiesgoYPruebas({
       respuestas, enfermedades, edadAnios: basicos.edadAnios, imc,
@@ -153,14 +148,7 @@ export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validacione
       capacidadFuncionalReducida,
       fechaIntervencion: intervencion.fechaHora ?? null,
       fechaReferencia: hoy,
-      pruebasRecientes: {
-        ...(fechaPrueba(pr.hemograma) ? { hemograma: fechaPrueba(pr.hemograma)! } : {}),
-        ...(fechaPrueba(pr.coagulacion) ? { coagulacion: fechaPrueba(pr.coagulacion)! } : {}),
-        ...(fechaPrueba(pr.bioquimica) ? { bioquimica: fechaPrueba(pr.bioquimica)! } : {}),
-        ...(fechaPrueba(pr.ecg) ? { ecg: fechaPrueba(pr.ecg)! } : {}),
-        ...(fechaPrueba(pr.rx_torax) ? { rx_torax: fechaPrueba(pr.rx_torax)! } : {}),
-        ...(ecoFecha ? { ecocardiograma: ecoFecha } : {}),
-      },
+      pruebasRecientes: fechasRecientes,
     });
 
     const posibleAnestesiaGeneralVal = posibleAnestesiaGeneral(intervencion.tecnicas);

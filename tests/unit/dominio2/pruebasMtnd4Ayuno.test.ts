@@ -14,6 +14,7 @@ const SIN_FACTORES: FactoresPruebas = {
   comorbilidadCardiovascularSignificativa: false,
   fragilidad: false,
   capacidadFuncionalReducida: false,
+  perfilTroponinaEsc2022: false,
 };
 const IV = new Date(2026, 9, 15, 8, 0);
 const nombres = (ps: { prueba: string }[]) => ps.map((p) => p.prueba).sort();

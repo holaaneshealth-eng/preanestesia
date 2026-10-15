@@ -13,6 +13,8 @@ import { PasoAntecedentes } from './pasos/PasoAntecedentes.tsx';
 import { PasoAlergias } from './pasos/PasoAlergias.tsx';
 import { PasoHabitos } from './pasos/PasoHabitos.tsx';
 import { PasoCribado } from './pasos/PasoCribado.tsx';
+import { PasoPruebas } from './pasos/PasoPruebas.tsx';
+import { derivarPruebasIndicadasUi } from './pasos/entradaPruebasUi.ts';
 import { PasoMedicacion } from './pasos/PasoMedicacion.tsx';
 import { PasoViaAerea } from './pasos/PasoViaAerea.tsx';
 import { PasoConsentimiento } from './pasos/PasoConsentimiento.tsx';
@@ -46,6 +48,7 @@ type Pantalla =
   | 'antecedentes'
   | 'habitos'
   | 'enfermedades'
+  | 'pruebas'
   | 'tecnica'
   | 'medicacion'
   | 'viaAerea'
@@ -148,7 +151,7 @@ export function App() {
     );
   }
 
-  const { intervencion, procedimiento, basicos, antecedentes, mtnd4, alergias, habitos, cribado, medicacion, viaAerea, consentimiento } = entrevista;
+  const { intervencion, procedimiento, basicos, antecedentes, mtnd4, alergias, habitos, cribado, pruebasComplementarias, medicacion, viaAerea, consentimiento } = entrevista;
 
   /** Registra la entrevista en el contador de uso (§14.3), una sola vez y sin datos clínicos. */
   function registrarUsoSiProcede() {
@@ -347,13 +350,26 @@ export function App() {
             onContinuar={(datos) => {
               setEntrevista((e) => ({ ...e, cribado: datos }));
               // Si veníamos de un aviso de coherencia del paso de medicación, se vuelve
-              // allí (conservando la medicación); si no, se sigue al paso de técnica.
+              // allí (conservando la medicación); si no, se sigue al paso de pruebas.
               if (volverAMedicacion) {
                 setVolverAMedicacion(false);
                 setPantalla('medicacion');
               } else {
-                setPantalla('tecnica');
+                setPantalla('pruebas');
               }
+            }}
+          />
+        )}
+
+        {/* 7 · Pruebas complementarias (entre enfermedades y técnica) */}
+        {pantalla === 'pruebas' && (
+          <PasoPruebas
+            inicial={pruebasComplementarias}
+            indicadas={derivarPruebasIndicadasUi(entrevista)}
+            onVolver={() => setPantalla('enfermedades')}
+            onContinuar={(datos) => {
+              setEntrevista((e) => ({ ...e, pruebasComplementarias: datos }));
+              setPantalla('tecnica');
             }}
           />
         )}
@@ -364,7 +380,7 @@ export function App() {
             inicial={intervencion?.tecnicas ?? []}
             inicialSub={intervencion?.subtipoNeuroaxial ? { subtipoNeuroaxial: intervencion.subtipoNeuroaxial } : undefined}
             procedimiento={procedimiento}
-            onVolver={() => setPantalla('enfermedades')}
+            onVolver={() => setPantalla('pruebas')}
             onContinuar={(tecnicas, grupoOft, sub) => {
               setEntrevista((e) => (e.intervencion
                 ? { ...e, intervencion: (() => {

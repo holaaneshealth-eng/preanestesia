@@ -13,10 +13,8 @@ import {
   moduloDeEnfermedad,
   PREGUNTAS_CONDICIONES_ESPECIALES,
   CONDICIONES_ESPECIALES_VACIO,
-  PRUEBAS_RECIENTES,
   type CribadoUi,
   type CondicionesEspeciales,
-  type PruebasRecientesUi,
   type OtraEnfermedad,
 } from '../estadoEntrevista.ts';
 import { MODULO_POR_ID } from '../../datos/modulosDatos.ts';
@@ -41,9 +39,6 @@ export function PasoCribado({ inicial, pediatrico = false, obstetrico = false, o
   const [condiciones, setCondiciones] = useState<CondicionesEspeciales>(
     inicial?.condicionesEspeciales ?? { ...CONDICIONES_ESPECIALES_VACIO },
   );
-  const [pruebasRecientes, setPruebasRecientes] = useState<PruebasRecientesUi>(
-    inicial?.pruebasRecientes ?? {},
-  );
   // Otras enfermedades escritas a mano (§6), no incluidas en el catálogo.
   const [otrasEnfermedades, setOtrasEnfermedades] = useState<OtraEnfermedad[]>(
     inicial?.otrasEnfermedades ?? [],
@@ -64,15 +59,6 @@ export function PasoCribado({ inicial, pediatrico = false, obstetrico = false, o
   }
   function quitarOtraEnfermedad(indice: number) {
     setOtrasEnfermedades((lista) => lista.filter((_, i) => i !== indice));
-  }
-
-  function cambiarPruebaReciente(id: keyof PruebasRecientesUi, valor: string) {
-    setPruebasRecientes((p) => {
-      const next = { ...p };
-      if (valor) next[id] = valor;
-      else delete next[id];
-      return next;
-    });
   }
 
   // Módulos a desplegar: uno por cada casilla marcada que tenga módulo (sin repetir).
@@ -131,7 +117,6 @@ export function PasoCribado({ inicial, pediatrico = false, obstetrico = false, o
       respuestasModulos: respuestasFiltradas,
       hemstop,
       condicionesEspeciales: condiciones,
-      pruebasRecientes,
       otrasEnfermedades,
     });
   }
@@ -236,24 +221,6 @@ export function PasoCribado({ inicial, pediatrico = false, obstetrico = false, o
           ? 'positivo (≥ 2): se solicitará estudio de coagulación aunque la tabla no lo pida'
           : 'negativo'}
       </p>
-
-      <h3>Pruebas recientes (opcional)</h3>
-      <p>
-        Si el paciente ya tiene alguna prueba hecha, anote su fecha. Las que sigan vigentes el día de la
-        intervención no se vuelven a pedir (§7.4).
-      </p>
-      <div className="grupo-fechas">
-        {PRUEBAS_RECIENTES.map((p) => (
-          <label key={p.id} className="campo">
-            {p.etiqueta}
-            <input
-              type="date"
-              value={pruebasRecientes[p.id] ?? ''}
-              onChange={(ev) => cambiarPruebaReciente(p.id, ev.target.value)}
-            />
-          </label>
-        ))}
-      </div>
 
       <div className="acciones">
         <button type="button" className="boton-secundario" onClick={onVolver}>Volver</button>

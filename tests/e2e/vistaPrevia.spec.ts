@@ -62,6 +62,7 @@ async function entrevistaMinimaHastaResumen(page: Page) {
   await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
   await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
   await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+  await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
   await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
   await page.getByRole('button', { name: 'Continuar' }).click(); // 8 -> 9
   await page.getByRole('button', { name: 'Continuar' }).click(); // 9 -> 10
@@ -162,6 +163,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
 
     // Paso 8: añadir fármacos con distintos tipos de plazo.
@@ -231,6 +233,10 @@ test.describe('Vista previa', () => {
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click();
 
+    // Paso 7 — pruebas complementarias (nada obligatorio).
+    await expect(page.getByRole('heading', { name: /Pruebas complementarias/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+
     // Paso 7 — técnica anestésica prevista.
     await expect(page.getByRole('heading', { name: /Paso 7 · Técnica anestésica prevista/ })).toBeVisible();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -286,6 +292,7 @@ test.describe('Vista previa', () => {
     // Paso 6: marcar cardiopatía isquémica (stent).
     await page.getByRole('checkbox', { name: 'Cardiopatía isquémica / infarto' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
 
     // Paso 8: Plavix sin Adiro (monoterapia → requiere confirmación).
@@ -344,6 +351,7 @@ test.describe('Vista previa', () => {
     await page.locator('#cardiopatia_isquemica-stent_fecha').fill(fechaAntesIntervencion(60)); // ~2 meses antes
     await page.locator('#cardiopatia_isquemica-stent_motivo').selectOption('programado');
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7 técnica
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
 
     // Paso 7: técnica neuroaxial (dispara también la alerta amarilla del stent + técnica).
     await page.getByRole('checkbox', { name: /Neuroaxial/ }).check();
@@ -382,6 +390,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
 
     // Paso 8: añadir Adiro y continuar.
@@ -424,6 +433,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
 
     // Paso 7: técnica general (para que aplique la advertencia del sugammadex).
     await page.getByRole('checkbox', { name: 'General', exact: true }).check();
@@ -478,6 +488,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
     await page.getByRole('button', { name: 'Continuar' }).click(); // 8 -> 9
     await page.getByRole('button', { name: 'Continuar' }).click(); // 9 -> 10
@@ -537,6 +548,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('group', { name: /Ronca fuerte/ }).getByRole('button', { name: 'Sí' }).click();
     await page.locator('#saos-perimetro_cuello').fill('42');
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades -> 7 técnica
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
 
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
     await page.getByRole('button', { name: 'Continuar' }).click(); // 8 -> 9
@@ -579,6 +591,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('group', { name: /cansado o somnoliento durante el día/ }).getByRole('button', { name: 'Sí' }).click();
     await page.locator('#saos-perimetro_cuello').fill('36');
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades -> 7 técnica
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
 
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
     await page.getByRole('button', { name: 'Continuar' }).click(); // 8 -> 9
@@ -612,6 +625,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
 
     // Paso 8: fentanilo transdérmico (parche, µg/h) y tapentadol (mg × tomas/día).
@@ -660,6 +674,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('group', { name: /ictus o un AIT/ }).getByRole('button', { name: 'Sí' }).click();
     await page.locator('#ictus_o_tvp-ictus_fecha').fill(fechaAntesIntervencion(35)); // < 3 meses antes
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
 
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
     await page.getByRole('button', { name: 'Continuar' }).click(); // 8 -> 9
@@ -693,6 +708,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
 
     // Paso 8: buscar y añadir el implante anticonceptivo (no pide hora de toma).
@@ -736,6 +752,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades -> 7 técnica
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
 
     // Paso 7: técnica tópica → catarata de riesgo bajo (no se suspenden anticoagulantes).
     await expect(page.getByRole('heading', { name: /Paso 7 · Técnica anestésica prevista/ })).toBeVisible();
@@ -799,6 +816,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
     await expect(page.getByRole('heading', { name: /Paso 8 · Medicación/ })).toBeVisible();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 8 -> (salta vía aérea) 10 consentimiento
@@ -910,6 +928,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
 
     // Paso 8: añadir Eliquis (apixabán, anti-Xa) con una hora de toma.
@@ -949,6 +968,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
 
     // Paso 8: añadir Eliquis y dar el aclaramiento con una analítica antigua.
@@ -987,6 +1007,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
 
     // Paso 7: marcar neuroaxial + sedación → subtipo raquídea.
     await page.getByRole('checkbox', { name: /Neuroaxial/ }).check();
@@ -1031,6 +1052,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
 
     // Paso 8: añadir Adiro con una hora de toma, dosis 100 mg y frecuencia cada 24 h.
@@ -1101,6 +1123,7 @@ test.describe('Vista previa', () => {
     await expect(page.getByText('Enfermedad de Behçet')).toBeVisible();
     await expect(page.getByText('brotes frecuentes')).toBeVisible();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades -> 7
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
 
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
     await page.getByRole('button', { name: 'Continuar' }).click(); // 8 medicación -> 9
@@ -1300,6 +1323,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 técnica -> 8
 
     // Paso 8: Adiro (plazo en días) para tener una instrucción concreta en la hoja.
@@ -1364,6 +1388,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 hábitos
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 enfermedades
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
     await page.getByRole('checkbox', { name: /Neuroaxial/ }).check();
     await page.getByRole('radio', { name: 'Raquídea (intradural)' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
@@ -1475,8 +1500,8 @@ test.describe('Fase ágil · comprobación previa (punto 1)', () => {
     // Paso 6 · Enfermedades: marcar una enfermedad con módulo y NO contestar nada.
     await page.getByRole('checkbox', { name: 'Diabetes' }).first().check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // avanza sin contestar el módulo
-    // Si avanzamos, el siguiente paso (técnica) es visible.
-    await expect(page.getByRole('heading', { name: /Paso 7 · Técnica/ })).toBeVisible();
+    // Si avanzamos, el siguiente paso (pruebas complementarias) es visible.
+    await expect(page.getByRole('heading', { name: /Pruebas complementarias/ })).toBeVisible();
   });
 
   test('Eliquis y Acovil muestran dosis, frecuencia y hora, y ninguno bloquea el avance', async ({ page }) => {
@@ -1497,6 +1522,7 @@ test.describe('Fase ágil · comprobación previa (punto 1)', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 -> 6
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8 medicación
 
     // Eliquis (apixabán): aparece la frecuencia y la hora; la dosis genérica NO (su
@@ -1537,6 +1563,7 @@ test.describe('Fase ágil · comprobación previa (punto 1)', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 -> 6
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
 
     // Paso 7: marcar DOS técnicas a la vez (general + bloqueo periférico).
     await page.getByRole('checkbox', { name: 'General', exact: true }).check();
@@ -1601,6 +1628,7 @@ test.describe('Fase ágil · comprobación previa (punto 1)', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 -> 6
     await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7
+    await page.getByRole("button", { name: "Continuar" }).click(); // 7 pruebas complementarias -> técnica
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8 medicación
 
     // Añadir Eliquis sin haber marcado fibrilación auricular → aviso de coherencia.
@@ -1619,5 +1647,42 @@ test.describe('Fase ágil · comprobación previa (punto 1)', () => {
     // Volvemos al paso de medicación (no al de técnica), con Eliquis todavía presente.
     await expect(page.getByRole('heading', { name: /Paso 8 · Medicación/ })).toBeVisible();
     await expect(page.locator('.ficha-farmaco').filter({ hasText: 'Eliquis' })).toBeVisible();
+  });
+
+  test('punto 3 · paso de pruebas complementarias: marca la troponina indicada (ESC 2022) y recoge estado + analítica', async ({ page }) => {
+    await page.goto('/preanestesia/');
+    await page.getByRole('button', { name: 'Presencial' }).click();
+    await page.getByRole('button', { name: 'Comenzar' }).click();
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
+    await page.locator('#proc').fill('Artroplastia total de rodilla'); // riesgo intermedio
+    await page.getByRole('button', { name: /Artroplastia total de rodilla/i }).first().click();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await pasoAlergiasSinAlergias(page);
+    await page.locator('#edad').fill('70'); // ≥ 65 → perfil ESC 2022
+    await page.getByRole('radio', { name: 'Hombre' }).check();
+    await page.locator('#peso').fill('80');
+    await page.locator('#talla').fill('175');
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 3 -> 4
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 4 -> 5
+    // Paso 5 (hábitos): el paciente ≥ 65 exige CFS; se rellena para poder avanzar.
+    await page.locator('#cfs').fill('3');
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 5 -> 6
+    await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7 pruebas
+
+    // Paso de pruebas complementarias.
+    await expect(page.getByRole('heading', { name: /Pruebas complementarias/ })).toBeVisible();
+    // La troponina aparece marcada como «Indicada» (ESC 2022: ≥ 65 + cirugía intermedia).
+    const troponina = page.locator('fieldset').filter({ hasText: 'Troponina ultrasensible' });
+    await expect(troponina.getByText('Indicada')).toBeVisible();
+    // Registrar la analítica: la tiene pero no la ha traído, con hemoglobina y filtrado.
+    const analitica = page.locator('fieldset').filter({ hasText: 'Analítica general' });
+    await analitica.getByRole('radio', { name: 'La tiene pero no la ha traído' }).check();
+    await analitica.getByText('Hemoglobina (g/dL)').locator('input').fill('13.5');
+    await analitica.getByText(/Filtrado glomerular/).locator('input').fill('80');
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 7 pruebas -> técnica
+
+    // Avanzamos al paso de técnica.
+    await expect(page.getByRole('heading', { name: /Paso 7 · Técnica anestésica prevista/ })).toBeVisible();
   });
 });

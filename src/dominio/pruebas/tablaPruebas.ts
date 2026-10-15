@@ -13,7 +13,8 @@ export type Prueba =
   | 'ecg'
   | 'rx_torax'
   | 'ecocardiograma'
-  | 'bnp';
+  | 'bnp'
+  | 'troponina';
 
 export interface PruebaSolicitada {
   prueba: Prueba;
@@ -44,6 +45,14 @@ export interface FactoresPruebas {
   fragilidad: boolean;
   /** Capacidad funcional reducida (< 4 METs o DASI ≤ 34) — nota **. */
   capacidadFuncionalReducida: boolean;
+  /**
+   * Troponina ultrasensible indicada por el criterio ESC 2022: cirugía de riesgo
+   * intermedio o alto en pacientes con enfermedad cardiovascular conocida, factores
+   * de riesgo cardiovascular (incluida la edad ≥ 65) o síntomas sugestivos. El
+   * llamador ya resuelve «el paciente cumple el perfil»; aquí se combina con el riesgo
+   * quirúrgico (intermedio/alto).
+   */
+  perfilTroponinaEsc2022: boolean;
 }
 
 /**
@@ -130,6 +139,13 @@ export function decidirPruebas(
     }
   }
 
+  // —— Troponina ultrasensible (ESC 2022) ——
+  // Cirugía de riesgo intermedio o alto en pacientes con enfermedad cardiovascular
+  // conocida, factores de riesgo cardiovascular (incluida la edad ≥ 65) o síntomas.
+  if ((riesgoQuirurgico === 'intermedio' || riesgoQuirurgico === 'alto') && f.perfilTroponinaEsc2022) {
+    out.push({ prueba: 'troponina', motivo: `troponina basal (ESC 2022): cirugía de riesgo ${riesgoQuirurgico} con perfil de riesgo cardiovascular` });
+  }
+
   // —— Ecocardiograma (§7.3) ——
   if (f.supuestoEcocardiograma) {
     out.push({ prueba: 'ecocardiograma', motivo: 'sospecha o valvulopatía sin eco reciente/empeoramiento' });
@@ -158,7 +174,7 @@ function dedupe(ps: PruebaSolicitada[]): PruebaSolicitada[] {
  * indicación (nota **), no se "renueva" por fecha, así que no tiene ventana de
  * validez y no entra en {@link VALIDEZ_DIAS} ni en {@link pruebaVigente}.
  */
-export type PruebaConVigencia = Exclude<Prueba, 'bnp'>;
+export type PruebaConVigencia = Exclude<Prueba, 'bnp' | 'troponina'>;
 
 export const VALIDEZ_DIAS: Record<PruebaConVigencia, number> = {
   hemograma: 30,

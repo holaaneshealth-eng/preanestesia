@@ -135,7 +135,7 @@ console.log('Pautas horarias de referencia usadas: apixabán 09:00/21:00, enalap
 // Caso 11
 {
   console.log('\nCaso 11 · mujer 45 a sana, tumorectomía de mama (bajo/bajo)');
-  const sinFactores: FactoresPruebas = { anemiaOHbBaja: false, trastornoCoagulacionOAnticoagulante: false, anestesiaRegionalPosible: false, sangradoPrevisible: false, hemstopPositivo: false, supuestoRxTorax: false, supuestoEcocardiograma: false, comorbilidadCardiovascularSignificativa: false, fragilidad: false, capacidadFuncionalReducida: false };
+  const sinFactores: FactoresPruebas = { anemiaOHbBaja: false, trastornoCoagulacionOAnticoagulante: false, anestesiaRegionalPosible: false, sangradoPrevisible: false, hemstopPositivo: false, supuestoRxTorax: false, supuestoEcocardiograma: false, comorbilidadCardiovascularSignificativa: false, fragilidad: false, capacidadFuncionalReducida: false, perfilTroponinaEsc2022: false };
   const a = decidirPruebas('bajo', 'bajo', sinFactores);
   const b = decidirPruebas('bajo', 'bajo', { ...sinFactores, anestesiaRegionalPosible: true });
   const c = decidirPruebas('bajo', 'bajo', { ...sinFactores, hemstopPositivo: true });
