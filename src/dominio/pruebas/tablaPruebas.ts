@@ -41,18 +41,10 @@ export interface FactoresPruebas {
    *  valvulopatía moderada-grave, FA/arritmia, arteriopatía periférica o aneurisma de
    *  aorta, ictus/AIT previo, miocardiopatía, hipertensión pulmonar. La HTA aislada NO cuenta. */
   comorbilidadCardiovascularSignificativa: boolean;
-  /** Fragilidad (CFS ≥ 5) — nota **. */
+  /** Fragilidad (CFS ≥ 5) — nota ** (BNP y troponina). */
   fragilidad: boolean;
-  /** Capacidad funcional reducida (< 4 METs o DASI ≤ 34) — nota **. */
+  /** Capacidad funcional reducida (< 4 METs o DASI ≤ 34) — nota ** (BNP y troponina). */
   capacidadFuncionalReducida: boolean;
-  /**
-   * Troponina ultrasensible indicada por el criterio ESC 2022: cirugía de riesgo
-   * intermedio o alto en pacientes con enfermedad cardiovascular conocida, factores
-   * de riesgo cardiovascular (incluida la edad ≥ 65) o síntomas sugestivos. El
-   * llamador ya resuelve «el paciente cumple el perfil»; aquí se combina con el riesgo
-   * quirúrgico (intermedio/alto).
-   */
-  perfilTroponinaEsc2022: boolean;
 }
 
 /**
@@ -126,9 +118,10 @@ export function decidirPruebas(
     });
   }
 
-  // —— BNP o NT-proBNP (nota **) ——
-  // Solo en cirugía de riesgo intermedio o alto, con comorbilidad cardiovascular
-  // significativa, fragilidad (CFS ≥ 5) o capacidad funcional reducida (< 4 METs).
+  // —— BNP o NT-proBNP (nota **) y troponina ultrasensible (ESC 2022) ——
+  // Mismo grupo para ambas: cirugía de riesgo intermedio o alto, con comorbilidad
+  // cardiovascular significativa, fragilidad (CFS ≥ 5) o capacidad funcional reducida
+  // (< 4 METs). La edad, la HTA o la diabetes por sí solas NO las indican.
   if (riesgoQuirurgico === 'intermedio' || riesgoQuirurgico === 'alto') {
     const motivosBnp: string[] = [];
     if (f.comorbilidadCardiovascularSignificativa) motivosBnp.push('comorbilidad cardiovascular significativa');
@@ -136,14 +129,8 @@ export function decidirPruebas(
     if (f.capacidadFuncionalReducida) motivosBnp.push('capacidad funcional reducida (< 4 METs)');
     if (motivosBnp.length > 0) {
       out.push({ prueba: 'bnp', motivo: `nota **: cirugía de riesgo ${riesgoQuirurgico} con ${motivosBnp.join(', ')}` });
+      out.push({ prueba: 'troponina', motivo: `troponina basal (ESC 2022): cirugía de riesgo ${riesgoQuirurgico} con ${motivosBnp.join(', ')}` });
     }
-  }
-
-  // —— Troponina ultrasensible (ESC 2022) ——
-  // Cirugía de riesgo intermedio o alto en pacientes con enfermedad cardiovascular
-  // conocida, factores de riesgo cardiovascular (incluida la edad ≥ 65) o síntomas.
-  if ((riesgoQuirurgico === 'intermedio' || riesgoQuirurgico === 'alto') && f.perfilTroponinaEsc2022) {
-    out.push({ prueba: 'troponina', motivo: `troponina basal (ESC 2022): cirugía de riesgo ${riesgoQuirurgico} con perfil de riesgo cardiovascular` });
   }
 
   // —— Ecocardiograma (§7.3) ——

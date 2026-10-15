@@ -342,6 +342,10 @@ export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validacione
     if (plaquetasObst !== undefined && plaquetasObst < 80) {
       notas.push('Plaquetopenia: condiciona la técnica neuroaxial.');
     }
+    // Troponina indicada (ESC 2022): seguimiento postoperatorio.
+    if (rp.pruebas.some((p) => p.prueba === 'troponina')) {
+      notas.push('Troponina ultrasensible a las 24 y 48 h del postoperatorio (ESC 2022).');
+    }
     for (const f of plan) if (f.resultado.textoAnestesiologo) notas.push(`${f.resultado.nombreComercial}: ${f.resultado.textoAnestesiologo}`);
     if (mt?.alerta?.gravedad === 'roja') notas.push('mtND4: seguir las medidas del consenso SEDAR (evitar halogenados/TIVA, regional preferente, monitorización de profundidad, etc.).');
 

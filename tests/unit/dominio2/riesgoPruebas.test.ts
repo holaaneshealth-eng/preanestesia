@@ -46,4 +46,29 @@ describe('§7 · clase de riesgo y pruebas desde módulos', () => {
     }));
     expect(r.clase.clase).toBe('alto');
   });
+
+  // —— Troponina ultrasensible (ESC 2022): mismo grupo que el NT-proBNP ——
+  it('troponina y BNP juntos cuando hay comorbilidad CV significativa en cirugía intermedia', () => {
+    const r = derivarRiesgoYPruebas(base({ enfermedades: new Set(['insuficiencia_cardiaca']) }));
+    const n = nombres(r);
+    expect(n).toContain('troponina');
+    expect(n).toContain('bnp');
+  });
+
+  it('troponina por fragilidad (CFS ≥ 5) en cirugía intermedia', () => {
+    const r = derivarRiesgoYPruebas(base({ fragilidad: true }));
+    expect(nombres(r)).toContain('troponina');
+  });
+
+  it('HTA, diabetes o edad ≥ 65 por sí solas NO indican troponina ni BNP', () => {
+    const r = derivarRiesgoYPruebas(base({ edadAnios: 75, enfermedades: new Set(['hta', 'diabetes']) }));
+    const n = nombres(r);
+    expect(n).not.toContain('troponina');
+    expect(n).not.toContain('bnp');
+  });
+
+  it('en cirugía de bajo riesgo no hay troponina aunque haya comorbilidad CV', () => {
+    const r = derivarRiesgoYPruebas(base({ riesgoCardiovascular: 'bajo', enfermedades: new Set(['insuficiencia_cardiaca']) }));
+    expect(nombres(r)).not.toContain('troponina');
+  });
 });

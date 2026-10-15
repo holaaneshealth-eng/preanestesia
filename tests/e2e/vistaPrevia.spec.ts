@@ -1658,7 +1658,7 @@ test.describe('Fase ágil · comprobación previa (punto 1)', () => {
     await page.getByRole('button', { name: /Artroplastia total de rodilla/i }).first().click();
     await page.getByRole('button', { name: 'Continuar' }).click();
     await pasoAlergiasSinAlergias(page);
-    await page.locator('#edad').fill('70'); // ≥ 65 → perfil ESC 2022
+    await page.locator('#edad').fill('70');
     await page.getByRole('radio', { name: 'Hombre' }).check();
     await page.locator('#peso').fill('80');
     await page.locator('#talla').fill('175');
@@ -1667,12 +1667,13 @@ test.describe('Fase ágil · comprobación previa (punto 1)', () => {
     // Paso 5 (hábitos): el paciente ≥ 65 exige CFS; se rellena para poder avanzar.
     await page.locator('#cfs').fill('3');
     await page.getByRole('button', { name: 'Continuar' }).click(); // 5 -> 6
-    await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
+    // Marcar cardiopatía isquémica → comorbilidad CV significativa (indica BNP y troponina).
+    await page.getByRole('checkbox', { name: /Cardiopatía isquémica/ }).first().check();
     await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7 pruebas
 
     // Paso de pruebas complementarias.
     await expect(page.getByRole('heading', { name: /Pruebas complementarias/ })).toBeVisible();
-    // La troponina aparece marcada como «Indicada» (ESC 2022: ≥ 65 + cirugía intermedia).
+    // La troponina aparece marcada como «Indicada» (ESC 2022: comorbilidad CV + cirugía intermedia).
     const troponina = page.locator('fieldset').filter({ hasText: 'Troponina ultrasensible' });
     await expect(troponina.getByText('Indicada')).toBeVisible();
     // Registrar la analítica: la tiene pero no la ha traído, con hemoglobina y filtrado.

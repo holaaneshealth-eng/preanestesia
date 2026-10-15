@@ -471,11 +471,11 @@ describe('Casos G · pruebas complementarias', () => {
   }
   const nombres = (r: ReturnType<typeof derivarRiesgoYPruebas>) => r.pruebas.map((p) => p.prueba).sort();
 
-  it('G1 varón 70 HTA, METs≥4, prótesis rodilla (intermedio): clase bajo-moderado → hemograma, coag, bioquímica, ECG, troponina (ESC 2022, ≥65); sin Rx; sin BNP', () => {
+  it('G1 varón 70 HTA, METs≥4, prótesis rodilla (intermedio): clase bajo-moderado → hemograma, coag, bioquímica, ECG; sin Rx; sin BNP ni troponina (HTA/edad por sí solas no las indican)', () => {
     const r = derivarRiesgoYPruebas(baseRp({ edadAnios: 70, enfermedades: new Set(['hta']) }));
     expect(r.clase.clase).toBe('bajo-moderado');
-    // Troponina basal por ESC 2022 (edad ≥ 65 + cirugía intermedia).
-    expect(nombres(r)).toEqual(['bioquimica', 'coagulacion', 'ecg', 'hemograma', 'troponina']);
+    // Ni BNP ni troponina: la HTA y la edad por sí solas no las indican (mismo grupo que el BNP).
+    expect(nombres(r)).toEqual(['bioquimica', 'coagulacion', 'ecg', 'hemograma']);
   });
 
   it('G1b HTA aislada NO cuenta como comorbilidad CV: no se pide BNP', () => {

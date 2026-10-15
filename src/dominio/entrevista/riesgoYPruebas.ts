@@ -194,26 +194,7 @@ export function derivarFactoresPruebas(e: EntradaRiesgoPruebas): FactoresPruebas
     comorbilidadCardiovascularSignificativa: tieneComorbilidadCvSignificativa(e),
     fragilidad: e.fragilidad === true,
     capacidadFuncionalReducida: e.capacidadFuncionalReducida === true,
-    perfilTroponinaEsc2022: perfilTroponina(e),
   };
-}
-
-/**
- * Perfil de riesgo cardiovascular para la troponina basal (ESC 2022): enfermedad
- * cardiovascular conocida, factores de riesgo cardiovascular (edad ≥ 65, HTA,
- * diabetes, dislipidemia o tabaquismo) o síntomas cardiacos sugestivos. (El riesgo
- * quirúrgico intermedio/alto lo combina `decidirPruebas`.)
- */
-function perfilTroponina(e: EntradaRiesgoPruebas): boolean {
-  if (e.edadAnios >= 65) return true;
-  if (tieneComorbilidadCvSignificativa(e)) return true;
-  const FR_CV = ['hta', 'diabetes', 'dislipidemia', 'cardiopatia_isquemica', 'stent_o_infarto'];
-  for (const id of FR_CV) if (e.enfermedades.has(id)) return true;
-  // Tabaquismo activo (si el módulo de hábitos lo aportó entre las enfermedades/flags).
-  if (e.enfermedades.has('tabaquismo') || e.enfermedades.has('fumador')) return true;
-  // Síntomas cardiacos sugestivos: angina residual declarada en el módulo.
-  if ((e.respuestas['cardiopatia_isquemica'] ?? {}).angina_residual === true) return true;
-  return false;
 }
 
 /**
