@@ -17,8 +17,8 @@ Fuentes abreviadas: **DF** = `docs/documento_fuente.md`; **SERV** = protocolo de
 
 | # | Situación | Qué hace hoy | Pauta propuesta (fuente) | Validación |
 |---|-----------|--------------|--------------------------|------------|
-| 1.1 | **Falta el aclaramiento** (anti-Xa o dabigatrán, con o sin neuroaxial) | `consultar`; «el anestesiólogo le llamará»; `datoQueFalta: aclaramiento` | Suspender con el **plazo más largo** del tramo que corresponda: dabigatrán + neuroaxial → **120 h**; dabigatrán sin neuroaxial → base + 48 h; anti-Xa + neuroaxial → **96 h**; anti-Xa sin neuroaxial → base + 24 h. Es decir, asumir CrCl < 30/< 50 (el peor caso). (DF §8.2; EHRA 2021) | 🟡 «aclaramiento no disponible: pauta calculada con el supuesto más prudente; confirmar función renal» |
-| 1.2 | **Alto riesgo trombótico** (§8.1: p. ej. ictus/AIT < 3 meses, TVP/TEP < 3 meses, válvula mecánica…) | `consultar`; nota «consultar hematología/cardiología el cambio a acenocumarol para terapia puente» | Suspender el ACOD con el plazo estándar del tramo (72 h alto/neuroaxial) **y** emitir la nota de valorar puente/cambio a AVK como recomendación, sin bloquear la hoja. (DF §8.1/§8.2) | 🔴 «alto riesgo trombótico: valorar terapia puente o cambio a acenocumarol» |
+| 1.1 | **Falta el aclaramiento** (anti-Xa o dabigatrán, con o sin neuroaxial) | `consultar`; «el anestesiólogo le llamará»; `datoQueFalta: aclaramiento` | Si no hay creatinina pero **sí filtrado glomerular** apuntado en el paso de pruebas, usarlo como aproximación del aclaramiento para elegir el tramo (nota amarilla de que es una aproximación). **Solo si no hay ninguno de los dos datos**, aplicar el **plazo más largo** del tramo: dabigatrán + neuroaxial → **120 h**; dabigatrán sin neuroaxial → base + 48 h; anti-Xa + neuroaxial → **96 h**; anti-Xa sin neuroaxial → base + 24 h (asumir CrCl < 30/< 50, el peor caso). (DF §8.2; EHRA 2021) | 🟡 «función renal no disponible: tramo estimado con el filtrado glomerular o, si falta, con el supuesto más prudente; confirmar» |
+| 1.2 | **Alto riesgo trombótico** (§8.1: p. ej. ictus/AIT < 3 meses, TVP/TEP < 3 meses, válvula mecánica…) | `consultar`; nota «consultar hematología/cardiología el cambio a acenocumarol para terapia puente» | Suspender el ACOD con el **plazo estándar del tramo** (72 h alto/neuroaxial). **No se propone cambiar a acenocumarol ni terapia puente** (con ACOD no se recomienda; EHRA 2021, estudio PAUSE). (DF §8.1/§8.2; EHRA 2021/PAUSE) | 🔴 «alto riesgo trombótico: valorar manejo con hematología o cardiología» |
 
 ---
 
@@ -64,7 +64,7 @@ Fuentes abreviadas: **DF** = `docs/documento_fuente.md`; **SERV** = protocolo de
 | # | Situación | Qué hace hoy | Pauta propuesta (fuente) | Validación |
 |---|-----------|--------------|--------------------------|------------|
 | 6.1 | **HBPM cuya dosis no encaja en profilaxis ni tratamiento** (tablas SETH) | `consultar`; `datoQueFalta: profiláctica/terapéutica` | Propuesta prudente: tratar como **terapéutica (24 h antes)**, el plazo más largo. (DF §8.4; SETH) | 🟡 «HBPM: confirmar si es dosis profiláctica (12 h) o terapéutica (24 h)» |
-| 6.2 | **Fondaparinux profiláctico con CrCl < 20** | `consultar`; «contraindicado» | Proponer **suspender con el plazo más largo (p. ej. 48 h)** y nota de contraindicación relativa por aclaramiento muy bajo. (DF §8.4) | 🔴 «fondaparinux con CrCl < 20: confirmar manejo» |
+| 6.2 | **Fondaparinux profiláctico con CrCl < 20** | `consultar`; «contraindicado» | Proponer **suspender con el plazo más largo que recoja el documento fuente para fondaparinux** (no un valor fijo de 48 h) y nota de contraindicación relativa por aclaramiento muy bajo. (DF §8.4) | 🔴 «fondaparinux con CrCl < 20: confirmar manejo» |
 
 ---
 
@@ -92,7 +92,7 @@ Fuentes abreviadas: **DF** = `docs/documento_fuente.md`; **SERV** = protocolo de
 |---|-----------|--------------|--------------------------|------------|
 | 9.1 | **Fármaco no catalogado** (escrito a mano) | `consultar`; «mantener y consultar» | Propuesta por defecto: **mantener** y nota «fármaco no incluido en el catálogo: el programa no le aplica reglas; revisar». (SERV) | 🟡 «fármaco no catalogado: revisar manejo» |
 | 9.2 | **Anticonceptivo hormonal / THS con riesgo trombótico alto** | `consultar`; «valorar suspender 4-6 semanas» | Propuesta: **mantener** (no se suspende de forma rutinaria por una cirugía) con nota de valorar suspensión 4-6 semanas antes solo en cirugía de muy alto riesgo trombótico + profilaxis. (DF §8.11) | 🟡 «anticonceptivo/THS: confirmar si procede suspender» |
-| 9.3 | **Plazo no alcanzable** (cualquier fármaco cuyo plazo cae en el pasado con la fecha actual) | `consultar`; «el anestesiólogo le llamará» | Propuesta: dar la **última toma posible / instrucción de la toma lo antes posible** y alerta de que el plazo ideal no se cumple; nunca dejar sin pauta. (DF §8.16) | 🟡 «plazo no alcanzable con esta fecha: confirmar manejo» |
+| 9.3 | **Plazo no alcanzable** (cualquier fármaco cuyo plazo cae en el pasado con la fecha actual) | `consultar`; «el anestesiólogo le llamará» | Instrucción al paciente: **«No tome más dosis desde hoy»** (nunca «tómela lo antes posible»); nunca dejar sin pauta. (DF §8.16) | 🔴 «plazo no alcanzable: valorar retrasar la cirugía» |
 
 ---
 
@@ -108,14 +108,15 @@ Fuentes abreviadas: **DF** = `docs/documento_fuente.md`; **SERV** = protocolo de
 
 | # | Situación | Qué hace hoy | Pauta propuesta (fuente) | Validación |
 |---|-----------|--------------|--------------------------|------------|
-| 11.1 | **Falta la hora de la toma** para calcular un plazo en horas | `consultar`; `datoQueFalta: hora de la toma` | Propuesta prudente: asumir la **hora habitual más temprana razonable** (o la hora de la intervención como referencia) y calcular el plazo; nota de confirmar la hora real. (SERV) | 🟡 «falta la hora de la toma: pauta con hora asumida» |
+| 11.1 | **Falta la hora de la toma** para calcular un plazo en horas | `consultar`; `datoQueFalta: hora de la toma` | Propuesta prudente: asumir la **toma más tardía del día (23:59)**, de modo que la última dosis permitida nunca quede dentro del plazo; nota de confirmar la hora real. (SERV) | 🟡 «falta la hora de la toma: pauta con la hora más tardía (23:59)» |
 | 11.2 | **`consultarGenerico`** (vía del despachador para reglas que escalan a confirmación) | `consultar` | Hereda la propuesta de la regla concreta que la motiva (ver filas anteriores). | según la regla |
 | 11.3 | **Combinación fija** que incluye un componente «requiere confirmación» | `masRestrictiva` hace ganar siempre a «requiere confirmación» | Al eliminar la confirmación de los componentes, la combinación mostrará el **plazo más restrictivo** de las pautas propuestas. (DF §8.0) | hereda el color del componente más restrictivo |
 
 ---
 
 ### Resumen de criterios transversales
-- **Dato ausente (aclaramiento, hora, fecha, dosis):** siempre la opción **más prudente** (plazo más largo / asumir el peor caso) y dejar un punto de validación amarillo para confirmar el dato.
-- **Riesgo trombótico/stent/válvula/antiangiogénico:** se propone una pauta, pero queda **punto rojo** porque la decisión clínica es relevante.
+- **Dato ausente (aclaramiento, hora, fecha, dosis):** siempre la opción **más prudente**. En concreto: aclaramiento → usar el filtrado glomerular apuntado si lo hay, y si no, el plazo más largo del tramo (1.1); hora de la toma → asumir las **23:59** (11.1); plazo no alcanzable → **«No tome más dosis desde hoy»** (9.3). Punto de validación amarillo para confirmar el dato, salvo donde se indique rojo.
+- **Riesgo trombótico/stent/válvula/antiangiogénico/plazo no alcanzable:** se propone una pauta, pero queda **punto rojo** porque la decisión clínica es relevante.
 - **Fármaco no catalogado:** mantener + aviso; nunca sin pauta.
 - Ningún fármaco queda sin instrucción en la hoja del paciente.
+- **Punto rojo en la hoja del paciente:** cuando un fármaco tenga un punto de validación **rojo**, su instrucción en la hoja del paciente (PDF y QR) lleva debajo la línea: **«El anestesiólogo revisará esta indicación y le llamará si hay algún cambio»**. En el QR viaja como **clave** (no el texto).
