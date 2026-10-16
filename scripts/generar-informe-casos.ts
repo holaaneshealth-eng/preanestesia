@@ -75,7 +75,8 @@ const ESPERADO_LITERAL: Record<string, string> = {};
   for (const linea of lineas) {
     const mId = linea.match(/^\*\*([A-Z][0-9]+[a-z]?)\.\*\*/);
     if (mId) { idActual = mId[1] ?? null; continue; }
-    const mEsp = linea.match(/^Esperado:\s*(.*)$/);
+    // Acepta «Esperado:» y «Esperado (anotación):» (p. ej. «Esperado (punto 8, 1.1):»).
+    const mEsp = linea.match(/^Esperado(?:\s*\([^)]*\))?:\s*(.*)$/);
     if (mEsp && idActual) { ESPERADO_LITERAL[idActual] = mEsp[1] ?? ''; idActual = null; }
   }
 }
@@ -153,9 +154,12 @@ function extraerTokens(esperadoRaw: string): string[] {
   // Horas hh:mm.
   push(esperado.match(/\b\d{1,2}:\d{2}\b/g));
   // Dosis y magnitudes con unidad (ya normalizadas sin espacio).
-  // (No se extraen plazos en h/días/semanas: son la explicación del esperado y el
-  //  motor los expresa como fecha/hora de última toma, ya comprobada por sí misma.)
+  // Los plazos en h/días NO se extraen: en las suspensiones el motor los expresa como
+  // fecha/hora de última toma (ya comprobada), no como «N días»/«N h». Los plazos en
+  // SEMANAS sí (incluidos rangos «6-8 semanas»): solo aparecen en recomendaciones de
+  // «mantener» (antiangiogénico, anticonceptivo) y el motor los emite literalmente.
   push(esperado.match(/\b\d+(?:\.\d+)?(?:ui|mg|ml\/min|ml|kg|%)\b/g));
+  push(esperado.match(/\b\d+(?:-\d+)?semanas\b/g));
   // Puntuaciones de escalas: "escala N" (STOP-Bang, Apfel, CHA2DS2-VA, 4AT, DASI, EGRI, Langeron, AUDIT-C).
   const escalas = esperado.match(/\b(?:stop-bang|apfel|cha2ds2-va|4at|dasi|egri|langeron|audit-c|hemstop|mets?)\s+\d+(?:\.\d+)?/g);
   push(escalas);
@@ -456,8 +460,9 @@ function add(id: string, calculado: string, textoPaciente: string, _a?: string |
   add('E11', farmacoResumen(r), r.textoPaciente, 'mantener', r.accion === 'mantener');
 }
 {
-  const r = reglaBiologico({ idFarmaco: 'a', nombreComercial: 'Humira', principio: 'adalimumab', periodicidadDias: 14, fechaUltimaDosis: new Date(2026, 9, 8) }, IV);
-  add('E12', `${farmacoResumen(r)}; nota anestesiólogo: ${r.textoAnestesiologo ?? '—'}`, r.textoPaciente, r.requiereConfirmacion && (r.textoAnestesiologo ?? '').includes('mitad de ciclo'));
+  const ultimaDosisE12 = new Date(2026, 9, 8);
+  const r = reglaBiologico({ idFarmaco: 'a', nombreComercial: 'Humira', principio: 'adalimumab', periodicidadDias: 14, fechaUltimaDosis: ultimaDosisE12 }, IV);
+  add('E12', `${farmacoResumen(r)}; última dosis: ${fh(ultimaDosisE12)}; nota anestesiólogo: ${r.textoAnestesiologo ?? '—'}`, r.textoPaciente, r.requiereConfirmacion && (r.textoAnestesiologo ?? '').includes('mitad de ciclo'));
 }
 {
   const r = reglaAntiangiogenico({ idFarmaco: 'b', nombreComercial: 'Avastin', principio: 'bevacizumab', semanasDesdeUltimaDosis: 4 });
@@ -474,7 +479,7 @@ function add(id: string, calculado: string, textoPaciente: string, _a?: string |
 {
   const r = reglaAnticonceptivoThs({ idFarmaco: 'a', nombreComercial: 'ACO', principio: 'etinilestradiol', via: 'oral' }, ctx({ riesgoTromboticoAlto: true }));
   const sg = avisoSugammadex({ mujerConAnticonceptivoHormonal: true, tipo: 'oral', posibleAnestesiaGeneral: true });
-  add('E16', `${farmacoResumen(r)}; sugammadex: ${sg.textoPaciente}`, r.textoPaciente, 'confirmación; sugammadex oral (dosis olvidada)', r.requiereConfirmacion && sg.textoPaciente.includes('olvidada'));
+  add('E16', `${farmacoResumen(r)}; nota anestesiólogo: ${r.textoAnestesiologo ?? '—'}; sugammadex: ${sg.textoPaciente}`, r.textoPaciente, r.puntoValidacion?.tipo === 'validar' && sg.textoPaciente.includes('olvidada'));
 }
 {
   const r = reglaAnticonceptivoThs({ idFarmaco: 'i', nombreComercial: 'Implante', principio: 'etonogestrel', via: 'implante' }, ctx({ riesgoTromboticoAlto: false }));
