@@ -68,6 +68,7 @@
     "confirmacion": "Sobre {n}, el anestesiólogo le llamará para indicarle qué hacer. No lo cambie por su cuenta.",
     "no_cumplible": "Con esta fecha ya no es posible seguir la pauta de {n}. Llame al {tel} lo antes posible.",
     "no_cumplible_sin_tel": "Con esta fecha ya no es posible seguir la pauta de {n}. Contacte con el servicio lo antes posible.",
+    "revision_anestesiologo": "El anestesiólogo revisará esta indicación y le llamará si hay algún cambio.",
     "mantener_oral": "Siga tomándolo como siempre, también el día de la intervención, con un sorbo de agua.",
     "mantener_sublingual": "Siga poniéndose el comprimido debajo de la lengua como siempre, también el día de la intervención.",
     "mantener_subcutanea": "Siga con sus inyecciones como siempre.",

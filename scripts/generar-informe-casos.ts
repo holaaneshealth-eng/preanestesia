@@ -420,8 +420,8 @@ function add(id: string, calculado: string, textoPaciente: string, _a?: string |
   add('E2', farmacoResumen(r), r.textoPaciente, 'mantener', r.accion === 'mantener');
 }
 {
-  const r = reglaSacubitriloValsartan({ idFarmaco: 's', nombreComercial: 'Entresto' });
-  add('E3', farmacoResumen(r), r.textoPaciente, 'requiere confirmación', r.requiereConfirmacion);
+  const r = reglaSacubitriloValsartan({ idFarmaco: 's', nombreComercial: 'Entresto' }, ctx({ pautaFarmaco: P('09:00') }));
+  add('E3', farmacoResumen(r), r.textoPaciente, 'suspender 24 h + validar', r.accion === 'suspender' && r.puntoValidacion?.tipo === 'validar');
 }
 {
   const r = reglaDiuretico({ idFarmaco: 'f', nombreComercial: 'Seguril', principio: 'furosemida' }, ctx({ pautaFarmaco: P('09:00') }));

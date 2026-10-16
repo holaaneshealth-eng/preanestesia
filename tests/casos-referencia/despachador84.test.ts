@@ -171,7 +171,7 @@ describe('Punto 4 · C antiagregantes: despachador == regla directa', () => {
     expect(evaluarFarmacoUi(d('aas', { idFarmaco: 'aas', nombreComercial: 'Adiro', principiosActivos: ['acido_acetilsalicilico'], horas: ['09:00'], dosisMg: 100 }), c, clin())).toEqual(directo);
   });
   it('C2 AAS 100 craneotomía (espacio cerrado)', () => {
-    const c = ctx({ espacioCerrado: true });
+    const c = ctx({ espacioCerrado: true, pautaFarmaco: P('09:00') });
     const directo = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 100, indicacionCardiovascular: false }, c);
     expect(evaluarFarmacoUi(d('aas', { idFarmaco: 'aas', nombreComercial: 'Adiro', principiosActivos: ['acido_acetilsalicilico'], horas: ['09:00'], dosisMg: 100 }), c, clin({ neurocirugiaIntracranealOMedular: true }))).toEqual(directo);
   });
@@ -280,9 +280,9 @@ describe('Punto 4 · E otros: despachador == regla directa', () => {
     const directo = reglaIecaAra2({ idFarmaco: 'enalapril', nombreComercial: 'Renitec', principio: 'enalapril', icDisfuncionSistolica: true, infartoReciente: false, proteinuriaONefropatia: false }, c);
     expect(evaluarFarmacoUi(d('ieca_ara2', { idFarmaco: 'enalapril', nombreComercial: 'Renitec', principiosActivos: ['enalapril'], horas: ['09:00'] }), c, clin({ icDisfuncionSistolica: true }))).toEqual(directo);
   });
-  it('E3 Entresto: confirmación', () => {
-    const c = ctx();
-    const directo = reglaSacubitriloValsartan({ idFarmaco: 'entresto', nombreComercial: 'Entresto' });
+  it('E3 Entresto: suspender 24 h + validación (punto 8)', () => {
+    const c = ctx({ pautaFarmaco: P('09:00') });
+    const directo = reglaSacubitriloValsartan({ idFarmaco: 'entresto', nombreComercial: 'Entresto' }, c);
     expect(evaluarFarmacoUi(d('sacubitrilo_valsartan', { idFarmaco: 'entresto', nombreComercial: 'Entresto', principiosActivos: ['sacubitrilo', 'valsartan'], horas: ['09:00'] }), c, clin())).toEqual(directo);
   });
   it('E4 furosemida', () => {

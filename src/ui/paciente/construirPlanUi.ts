@@ -64,10 +64,12 @@ export function construirPlanPaciente(
   pesoKg: number,
   /** "Hoy" para el plazo no alcanzable; la UI pasa la real, el modo entrenamiento una fija. */
   fechaReferencia: Date = new Date(),
+  /** Punto 8 (1.1): el aclaramiento es una aproximación por el filtrado glomerular. */
+  aclaramientoAproximadoFiltrado = false,
 ): FarmacoPlan[] {
-  // Fecha de referencia para extraer "requiere confirmación" y textos fijos.
+  // Fecha de referencia para extraer el plan y los textos fijos.
   const refFecha = intervencion.fechaHora ?? new Date(fechaReferencia.getTime() + 90 * MS_DIA);
-  const ctx = construirContexto({ ...intervencion, fechaHora: refFecha, fechaDesconocida: false }, pesoKg, clin.aclaramiento, undefined, fechaReferencia);
+  const ctx = construirContexto({ ...intervencion, fechaHora: refFecha, fechaDesconocida: false }, pesoKg, clin.aclaramiento, undefined, fechaReferencia, aclaramientoAproximadoFiltrado);
 
   return medicacion.map((f) => {
     const datos: DatosFarmacoUi = {

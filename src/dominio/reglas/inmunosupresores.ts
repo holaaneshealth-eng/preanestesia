@@ -10,7 +10,7 @@
  * - Biológicos: planificación por ciclo; requiere confirmación.
  */
 import type { ContextoReglas, ResultadoFarmaco } from '../tipos.ts';
-import { plazoDesdeDias, faltaHora, resultadoFaltaHora, TEXTO_MANTENER } from './motor.ts';
+import { plazoDesdeDias, aplicarHoraAsumida, TEXTO_MANTENER } from './motor.ts';
 
 const FUENTE = 'docs/documento_fuente.md §8.8 (ACR 2022)';
 
@@ -39,15 +39,16 @@ export function reglaInmunosupresorClasico(e: EntradaInmunosupresorClasico): Res
       requiereConfirmacion: false,
     };
   }
-  // Autoinmune o indicación desconocida: la enfermera no puede valorar el riesgo → confirmación.
+  // Punto 8 (7.1): autoinmune o indicación desconocida → se propone MANTENER (criterio
+  // ACR 2022 para la mayoría de clásicos salvo indicación en contra); punto amarillo.
   return {
     ...base,
-    accion: 'consultar',
-    textoPaciente:
-      'Sobre este medicamento, el anestesiólogo le confirmará qué hacer. No lo cambie por su cuenta.',
-    reglaAplicada: `${e.principio}: por enfermedad autoinmune, valorar suspender 1-2 días (requiere confirmación)`,
-    requiereConfirmacion: true,
-    ...(e.indicacion === undefined ? { datoQueFalta: 'indicación del inmunosupresor' } : {}),
+    accion: 'mantener',
+    textoPaciente: TEXTO_MANTENER,
+    reglaAplicada: `${e.principio}: por enfermedad autoinmune, mantener por defecto (ACR 2022)`,
+    requiereConfirmacion: false,
+    textoAnestesiologo: 'Inmunosupresor por enfermedad autoinmune: mantener por defecto (ACR 2022); valorar suspender 1-2 días según la cirugía o el riesgo de infección.',
+    puntoValidacion: { tipo: 'validar', motivo: `${e.principio} (autoinmune): se propone mantener; confirmar mantener o suspender 1-2 días.` },
   };
 }
 
@@ -73,14 +74,16 @@ export function reglaMetotrexato(e: EntradaMetotrexato): ResultadoFarmaco {
       requiereConfirmacion: false,
     };
   }
+  // Punto 8 (7.2): se propone MANTENER (ACR 2022 recomienda mantener MTX en cirugía
+  // electiva incluso a dosis altas, salvo función renal alterada); punto amarillo.
   return {
     ...base,
-    accion: 'consultar',
-    textoPaciente:
-      'Sobre este medicamento, el anestesiólogo le confirmará qué hacer. No lo cambie por su cuenta.',
-    reglaAplicada: 'Metotrexato > 20 mg/semana: requiere confirmación',
-    requiereConfirmacion: true,
-    textoAnestesiologo: 'Valorar omitir 1 o 2 dosis tras consultar con reumatología.',
+    accion: 'mantener',
+    textoPaciente: TEXTO_MANTENER,
+    reglaAplicada: 'Metotrexato > 20 mg/semana: mantener (ACR 2022, cirugía electiva)',
+    requiereConfirmacion: false,
+    textoAnestesiologo: 'Metotrexato a dosis alta: mantener por defecto (ACR 2022); valorar omitir 1-2 dosis si cirugía de alto riesgo de infección o función renal alterada.',
+    puntoValidacion: { tipo: 'validar', motivo: 'Metotrexato > 20 mg/semana: se propone mantener (ACR); confirmar mantener u omitir 1-2 dosis.' },
   };
 }
 
@@ -107,9 +110,7 @@ export function reglaFameMantener(e: EntradaSimpleReuma): ResultadoFarmaco {
 /** Inhibidores JAK (tofacitinib, baricitinib, upadacitinib): suspender 3 días. */
 export function reglaJak(e: EntradaSimpleReuma, ctx: ContextoReglas): ResultadoFarmaco {
   const plazo = plazoDesdeDias(ctx, 3);
-  const base = { idFarmaco: e.idFarmaco, nombreComercial: e.nombreComercial, principiosActivos: [e.principio], fuente: FUENTE };
-  if (faltaHora(plazo)) return resultadoFaltaHora(base);
-  return {
+  return aplicarHoraAsumida({
     idFarmaco: e.idFarmaco,
     nombreComercial: e.nombreComercial,
     principiosActivos: [e.principio],
@@ -119,7 +120,7 @@ export function reglaJak(e: EntradaSimpleReuma, ctx: ContextoReglas): ResultadoF
     reglaAplicada: `Inhibidor JAK (${e.principio}): suspender 3 días`,
     fuente: FUENTE,
     requiereConfirmacion: false,
-  };
+  }, plazo);
 }
 
 export interface EntradaBiologico {
@@ -134,22 +135,26 @@ export interface EntradaBiologico {
 
 /** Biológicos (anti-TNF, rituximab, tocilizumab, abatacept...): planificación por ciclo; confirmación. */
 export function reglaBiologico(e: EntradaBiologico, intervencion?: Date): ResultadoFarmaco {
+  // Punto 8 (7.3): se propone programar la cirugía al final del intervalo de dosis
+  // (omitir idealmente una) y se da la fecha de la última dosis como referencia; el
+  // paciente mantiene su pauta hasta que se le indique. Punto amarillo.
   const res: ResultadoFarmaco = {
     idFarmaco: e.idFarmaco,
     nombreComercial: e.nombreComercial,
     principiosActivos: [e.principio],
-    accion: 'consultar',
+    accion: 'mantener',
     textoPaciente:
-      'Sobre este tratamiento biológico, el anestesiólogo le indicará qué hacer. No lo cambie por su cuenta.',
-    reglaAplicada: 'Biológico: programar la cirugía al final del ciclo (idealmente omitiendo uno); requiere confirmación',
+      'Siga con su tratamiento biológico como siempre, salvo que el anestesiólogo le indique otra cosa al ajustar la fecha de la operación.',
+    reglaAplicada: 'Biológico: programar la cirugía al final del ciclo (idealmente omitiendo una dosis)',
     fuente: FUENTE,
-    requiereConfirmacion: true,
+    requiereConfirmacion: false,
     textoAnestesiologo:
       'Programar al final del ciclo (p. ej. adalimumab/2 semanas: operar justo antes de la siguiente dosis; ' +
       'rituximab: esperar 6 meses desde la infusión si es posible).',
+    puntoValidacion: { tipo: 'validar', motivo: 'Biológico: se propone programar la cirugía al final del ciclo; confirmar el encaje con el intervalo de dosis.' },
   };
   if (e.fechaUltimaDosis === undefined) {
-    res.datoQueFalta = 'fecha de la última dosis del biológico';
+    res.textoAnestesiologo += ' No consta la fecha de la última dosis: confirmarla para encajar la cirugía en el ciclo.';
     return res;
   }
   // Con fecha y periodicidad, se calcula en qué punto del ciclo cae la cirugía.

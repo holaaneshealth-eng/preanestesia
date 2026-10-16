@@ -269,7 +269,7 @@ test.describe('Vista previa', () => {
     await expect(page.getByRole('button', { name: 'Copiar', exact: true })).toBeVisible();
   });
 
-  test('§3/§12: la hoja/QR se generan igualmente; Plavix pendiente sale con la frase única y se confirma en el resumen', async ({ page }) => {
+  test('punto 8: Plavix en monoterapia propone la pauta y deja un punto de validación (sin «le llamará»)', async ({ page }) => {
     await page.goto('/preanestesia/');
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
@@ -306,23 +306,16 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 10 consentimiento
     await pasoMtnd4NoVenezolana(page); // 11 mtND4 -> resumen
 
-    // Resumen: el fármaco pendiente se lista en «Puntos pendientes de confirmación»,
-    // pero la hoja/QR se pueden generar IGUALMENTE (ya no hay bloqueo).
-    await expect(page.getByRole('heading', { name: /Puntos pendientes de confirmación/ })).toBeVisible();
+    // Punto 8: ya no hay «pendiente de confirmar». El resumen muestra un punto de
+    // validación clínica (amarillo) para la monoterapia, y la hoja/QR se generan igual.
+    await expect(page.getByRole('heading', { name: /Puntos de validación clínica/ })).toBeVisible();
+    await expect(page.getByText(/monoterapia/i).first()).toBeVisible();
     await expect(page.getByRole('button', { name: /Generar hoja y QR del paciente/ })).toBeVisible();
 
-    // Al generar la hoja, Plavix aparece con la frase única de §12.
+    // Al generar la hoja, Plavix aparece con su PAUTA (no con «el anestesiólogo le llamará»).
     await page.getByRole('button', { name: /Generar hoja y QR del paciente/ }).click();
-    await expect(page.getByText(/Sobre Plavix, el anestesiólogo le llamará/)).toBeVisible();
-
-    // Confirmar con el nombre del anestesiólogo en el resumen.
-    await page.getByLabel(/Nombre del anestesiólogo para Plavix/).fill('Dra. García');
-    await page.getByRole('button', { name: 'Confirmar', exact: true }).click();
-
-    // Tras confirmar: ya no queda la sección de pendientes y la hoja (que seguía
-    // mostrada) se recalcula, mostrando la pauta en lugar de la frase única de §12.
-    await expect(page.getByRole('heading', { name: /Puntos pendientes de confirmación/ })).toHaveCount(0);
     await expect(page.getByText(/Sobre Plavix, el anestesiólogo le llamará/)).toHaveCount(0);
+    await expect(page.getByText(/Tome la última dosis/).first()).toBeVisible();
   });
 
   test('§8.3/§12.7 stent reciente + neuroaxial → alerta roja de diferir y amarilla de técnica en el resumen', async ({ page }) => {
@@ -727,7 +720,9 @@ test.describe('Vista previa', () => {
 
   test('C-oft: catarata + apixabán — tópica no suspende; al pasar a peribulbar el paso 8 se recalcula', async ({ page }) => {
     const MANTENER = 'Siga tomándolo como siempre';
-    const RECALCULADO = 'el anestesiólogo le llamará';
+    // Punto 8: oftalmología moderada-alta (riesgo hemorrágico alto) ya no deja el ACOD
+    // «pendiente de confirmar»; propone una suspensión con fecha.
+    const RECALCULADO = 'Suspender';
 
     await page.goto('/preanestesia/');
     await page.getByRole('button', { name: 'Presencial' }).click();
@@ -775,7 +770,7 @@ test.describe('Vista previa', () => {
     await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
 
     // Paso 8 recalculado: el apixabán ya NO se mantiene (oftalmología moderada-alta
-    // = riesgo hemorrágico alto), sino que pasa a requerir suspensión/confirmación.
+    // = riesgo hemorrágico alto), sino que pasa a proponer una suspensión (punto 8).
     await expect(page.getByRole('heading', { name: /Paso 8 · Medicación/ })).toBeVisible();
     await expect(page.getByText(MANTENER, { exact: false })).toHaveCount(0);
     await expect(page.getByText(RECALCULADO, { exact: false })).toBeVisible();
@@ -910,7 +905,7 @@ test.describe('Vista previa', () => {
     await expect(page.getByRole('heading', { name: /Nueva entrevista/ })).toBeVisible();
   });
 
-  test('§8.2 aclaramiento en el paso 8: ACOD sin módulo renal pide el aclaramiento; «No disponible» → requiere confirmación', async ({ page }) => {
+  test('§8.2 aclaramiento en el paso 8: ACOD sin módulo renal pide el aclaramiento; «No disponible» → supuesto más prudente + validación (punto 8)', async ({ page }) => {
     await page.goto('/preanestesia/');
     await page.getByRole('button', { name: 'Presencial' }).click();
     await page.getByRole('button', { name: 'Comenzar' }).click();
@@ -944,10 +939,11 @@ test.describe('Vista previa', () => {
     await page.locator('#acl-valor').fill('1');
     await expect(page.getByText(/Aclaramiento calculado \(Cockcroft-Gault\): 73/)).toBeVisible();
 
-    // Marcar «No disponible» → el ACOD queda pendiente de confirmar (caso A7).
+    // Punto 8 (1.1): «No disponible» → el ACOD se calcula con el supuesto más prudente
+    // y queda como punto de validación (ya no «pendiente de confirmar»).
     await page.locator('#acl-tipo').selectOption('no_disponible');
-    await expect(page.getByText(/quedan «pendientes de confirmar»/)).toBeVisible();
-    await expect(page.getByText(/Consultar con el anestesiólogo/).first()).toBeVisible();
+    await expect(page.getByText(/supuesto más prudente/)).toBeVisible();
+    await expect(page.getByText(/Suspender/).first()).toBeVisible();
   });
 
   test('§6.7 aclaramiento antiguo: una analítica de hace más de 3 meses avisa en el resumen del anestesiólogo', async ({ page }) => {

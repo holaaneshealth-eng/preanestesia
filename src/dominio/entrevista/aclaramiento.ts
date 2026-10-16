@@ -24,10 +24,13 @@ export interface DatosParaAclaramiento {
 
 /** Resultado de resolver el aclaramiento efectivo de la entrevista. */
 export interface AclaramientoResuelto {
-  /** mL/min efectivo, o null si no se conoce (regla → requiere confirmación). */
+  /** mL/min efectivo, o null si no se conoce. */
   valor: number | null;
-  /** De dónde sale: módulo renal/trasplante, dato manual, o nada. */
-  fuente: 'modulo' | 'manual' | 'ninguno';
+  /**
+   * De dónde sale: módulo renal/trasplante, dato manual del paso 8, aproximación
+   * por el filtrado glomerular del paso de pruebas (punto 8, 1.1), o nada.
+   */
+  fuente: 'modulo' | 'manual' | 'filtrado_glomerular' | 'ninguno';
   /** Fecha (ISO yyyy-mm-dd) de la analítica usada, o null si no se conoce. */
   fecha: string | null;
 }
@@ -44,22 +47,32 @@ export function resolverAclaramiento(
   manual: AclaramientoManual | null,
   datos: DatosParaAclaramiento,
   fechaModulo: string | null = null,
+  filtradoGlomerular: number | null = null,
 ): AclaramientoResuelto {
   if (aclaramientoModulo !== null) return { valor: aclaramientoModulo, fuente: 'modulo', fecha: fechaModulo };
-  if (manual === null) return { valor: null, fuente: 'ninguno', fecha: null };
-  if (manual.tipo === 'no_disponible') return { valor: null, fuente: 'manual', fecha: null };
-  if (manual.tipo === 'aclaramiento') {
-    return { valor: manual.valor > 0 ? manual.valor : null, fuente: 'manual', fecha: manual.fecha ?? null };
+  // Dato manual del paso 8 (tiene prioridad sobre el filtrado del paso de pruebas).
+  if (manual !== null && manual.tipo !== 'no_disponible') {
+    if (manual.tipo === 'aclaramiento') {
+      if (manual.valor > 0) return { valor: manual.valor, fuente: 'manual', fecha: manual.fecha ?? null };
+    } else {
+      // Creatinina → Cockcroft-Gault.
+      const cl = calcularAclaramiento({
+        edadAnios: datos.edadAnios,
+        pesoKg: datos.pesoKg,
+        sexo: datos.sexo,
+        creatinina: manual.valor,
+        unidad: 'mg_dl',
+      });
+      if (cl !== null) return { valor: cl, fuente: 'manual', fecha: manual.fecha ?? null };
+    }
   }
-  // Creatinina → Cockcroft-Gault.
-  const cl = calcularAclaramiento({
-    edadAnios: datos.edadAnios,
-    pesoKg: datos.pesoKg,
-    sexo: datos.sexo,
-    creatinina: manual.valor,
-    unidad: 'mg_dl',
-  });
-  return { valor: cl, fuente: 'manual', fecha: manual.fecha ?? null };
+  // Punto 8 (1.1): sin creatinina ni aclaramiento propios, usar el filtrado glomerular
+  // del paso de pruebas como APROXIMACIÓN del aclaramiento para elegir el tramo.
+  if (filtradoGlomerular !== null && filtradoGlomerular > 0) {
+    return { valor: filtradoGlomerular, fuente: 'filtrado_glomerular', fecha: null };
+  }
+  if (manual === null) return { valor: null, fuente: 'ninguno', fecha: null };
+  return { valor: null, fuente: 'manual', fecha: null };
 }
 
 /**

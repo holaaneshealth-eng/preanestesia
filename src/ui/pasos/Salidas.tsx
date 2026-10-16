@@ -114,13 +114,18 @@ export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validacione
       edadAnios: basicos.edadAnios, pesoKg: basicos.pesoKg, sexo: basicos.sexo,
       fechaIntervencion: intervencion.fechaHora, espacioCerrado: intervencion.espacioCerrado, contrasteYodado: intervencion.contrasteYodado,
     });
-    // Aclaramiento efectivo (§8.2/§8.4): módulo renal/trasplante o, si no, el manual del paso 8.
-    const aclaramientoResuelto = resolverAclaramiento(clinBase.aclaramiento, entrevista.aclaramientoManual, basicos, clinBase.aclaramientoFecha);
+    // Aclaramiento efectivo (§8.2/§8.4): módulo renal/trasplante, el manual del paso 8
+    // o, si falta (punto 8, 1.1), el filtrado glomerular del paso de pruebas (aproximación).
+    const aclaramientoResuelto = resolverAclaramiento(
+      clinBase.aclaramiento, entrevista.aclaramientoManual, basicos, clinBase.aclaramientoFecha,
+      pruebasComplementarias?.filtradoGlomerular ?? null,
+    );
     const aclaramiento = aclaramientoResuelto.valor;
+    const aclaramientoAproximadoFiltrado = aclaramientoResuelto.fuente === 'filtrado_glomerular';
     const clin = { ...clinBase, aclaramiento };
     // ¿La analítica del aclaramiento es de hace más de 3 meses? (ref.: la intervención, o hoy).
     const aclaramientoAntiguo = aclaramientoDeMasDe3Meses(aclaramientoResuelto, intervencion.fechaHora ?? hoy);
-    const plan = construirPlanPaciente(medicacion ?? [], intervencion, clin, basicos.pesoKg, hoy);
+    const plan = construirPlanPaciente(medicacion ?? [], intervencion, clin, basicos.pesoKg, hoy, aclaramientoAproximadoFiltrado);
 
     // AUDIT-C solo si las tres preguntas están contestadas (§6.9); si no, no genera alertas ni anexo.
     const auditCompleto = habitos !== null && habitos.auditFrecuencia !== undefined && habitos.auditCantidad !== undefined && habitos.auditAtracon !== undefined;
@@ -396,6 +401,21 @@ export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validacione
     for (const p of dispositivo.puntos) {
       puntosValidacion.push({ id: p.id, tipo: 'validar', motivo: p.motivo, origen: 'dispositivo_cardiaco', ...(p.fuente ? { fuente: p.fuente } : {}) });
     }
+    // Punto 8: puntos de validación que deja cada regla de medicación (en vez de
+    // «requiere confirmación»). Rojos (posponer) o amarillos (validar).
+    plan.forEach((f, i) => {
+      const pv = f.resultado.puntoValidacion;
+      if (!pv) return;
+      puntosValidacion.push({
+        id: `farmaco:${f.resultado.idFarmaco}:${i}`,
+        tipo: pv.tipo,
+        motivo: pv.motivo,
+        origen: 'medicacion §8',
+        fuente: f.resultado.fuente,
+      });
+    });
+    // Orden: primero los rojos (posponer), luego los amarillos (validar).
+    puntosValidacion.sort((a, b) => (a.tipo === 'posponer' ? 0 : 1) - (b.tipo === 'posponer' ? 0 : 1));
 
     const tecnicaPrevista = textoTecnicaPrevista({
       tecnicas: intervencion.tecnicas,

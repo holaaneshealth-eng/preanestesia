@@ -58,7 +58,7 @@ export function BloqueHojaPaciente({ medicacion, intervencion, basicos, cribado,
   const hoy = fechaReferencia ?? new Date();
 
   const sexo: Sexo = basicos.sexo;
-  const clin = useMemo(
+  const { clin, aclaramientoAproximadoFiltrado } = useMemo(
     () => {
       const base = derivarHechosClinicos({
         respuestas: cribado.respuestasModulos,
@@ -71,16 +71,23 @@ export function BloqueHojaPaciente({ medicacion, intervencion, basicos, cribado,
         espacioCerrado: intervencion.espacioCerrado,
         contrasteYodado: intervencion.contrasteYodado,
       });
-      // Aclaramiento efectivo (§8.2/§8.4): módulo o, si no, el manual del paso 8.
-      const aclaramiento = resolverAclaramiento(base.aclaramiento, entrevista.aclaramientoManual, { edadAnios: basicos.edadAnios, pesoKg: basicos.pesoKg, sexo }).valor;
-      return { ...base, aclaramiento };
+      // Aclaramiento efectivo (§8.2/§8.4): módulo, el manual del paso 8 o, si falta
+      // (punto 8, 1.1), el filtrado glomerular del paso de pruebas (aproximación).
+      const resuelto = resolverAclaramiento(
+        base.aclaramiento, entrevista.aclaramientoManual, { edadAnios: basicos.edadAnios, pesoKg: basicos.pesoKg, sexo },
+        null, entrevista.pruebasComplementarias?.filtradoGlomerular ?? null,
+      );
+      return {
+        clin: { ...base, aclaramiento: resuelto.valor },
+        aclaramientoAproximadoFiltrado: resuelto.fuente === 'filtrado_glomerular',
+      };
     },
-    [cribado, medicacion, basicos, sexo, intervencion, entrevista.aclaramientoManual],
+    [cribado, medicacion, basicos, sexo, intervencion, entrevista.aclaramientoManual, entrevista.pruebasComplementarias],
   );
 
   const plan = useMemo(
-    () => construirPlanPaciente(medicacion, intervencion, clin, basicos.pesoKg, hoy),
-    [medicacion, intervencion, clin, basicos.pesoKg, hoy],
+    () => construirPlanPaciente(medicacion, intervencion, clin, basicos.pesoKg, hoy, aclaramientoAproximadoFiltrado),
+    [medicacion, intervencion, clin, basicos.pesoKg, hoy, aclaramientoAproximadoFiltrado],
   );
 
   // Puntos de validación clínica (§13 bis): la hoja del paciente muestra el aviso de

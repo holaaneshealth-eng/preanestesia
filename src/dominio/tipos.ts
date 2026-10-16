@@ -165,6 +165,22 @@ export interface ResultadoFarmaco {
    * despachador las conserva y el resumen las recoge de todo el plan (§8).
    */
   alertas?: Alerta[];
+  /**
+   * Punto de validación clínica que la regla deja para el anestesiólogo (punto 8).
+   * La regla SIEMPRE propone una pauta (nunca «requiere confirmación»); cuando la
+   * decisión clínica es relevante deja este punto, 🔴 'posponer' o 🟡 'validar'. Si
+   * es 'posponer', la instrucción del paciente añade la línea de revisión por el
+   * anestesiólogo (hoja/QR). El resumen lo recoge junto a los puntos del catálogo.
+   */
+  puntoValidacion?: PuntoValidacionFarmaco;
+}
+
+/** Punto de validación que una regla de medicación deja para el anestesiólogo (punto 8). */
+export interface PuntoValidacionFarmaco {
+  /** 🔴 'posponer' (revisar antes, línea de revisión en la hoja) o 🟡 'validar' (revisar). */
+  tipo: 'posponer' | 'validar';
+  /** Motivo clínico que ve el anestesiólogo en su resumen. */
+  motivo: string;
 }
 
 // ————————————————————————————————————————————————————————————————
@@ -209,6 +225,12 @@ export interface ContextoReglas {
   pesoKg: number;
   /** Aclaramiento de creatinina (mL/min) o null si no se conoce (R6.7). */
   aclaramiento: number | null;
+  /**
+   * Punto 8 (1.1): true si el aclaramiento usado es una APROXIMACIÓN a partir del
+   * filtrado glomerular apuntado en el paso de pruebas (no hay creatinina ni
+   * aclaramiento propios). La regla deja una nota amarilla de que es una aproximación.
+   */
+  aclaramientoAproximadoFiltrado?: boolean;
   /** Indicación del fármaco (para reglas que dependen de ella). */
   indicacion?: string;
   /** Pauta horaria del fármaco en evaluación (horas de toma del paciente). */

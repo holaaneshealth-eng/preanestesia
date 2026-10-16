@@ -80,7 +80,10 @@ export function CuerpoHoja({ instrucciones, ay, ex, fecha, t, idioma = 'es', int
             {instrucciones.map((i, k) => (
               <tr key={k} className={i.plazoNoCumplible ? 'fila-alerta' : ''}>
                 <td>{i.nombre}</td>
-                <td>{renderMed(i, t, telefonoContacto, fecha)}</td>
+                <td>
+                  {renderMed(i, t, telefonoContacto, fecha)}
+                  {i.revision && <span className="med-revision"> {t.med.revision_anestesiologo}</span>}
+                </td>
               </tr>
             ))}
           </tbody>

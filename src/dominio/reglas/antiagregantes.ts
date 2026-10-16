@@ -6,7 +6,7 @@
  * reglas_farmacos.json.
  */
 import type { ContextoReglas, ResultadoFarmaco, Alerta } from '../tipos.ts';
-import { neuroaxialOProfundo, plazoDesdeDias, plazoDesdeHoras, faltaHora, resultadoFaltaHora, TEXTO_MANTENER } from './motor.ts';
+import { neuroaxialOProfundo, plazoDesdeDias, plazoDesdeHoras, aplicarHoraAsumida, TEXTO_MANTENER } from './motor.ts';
 import { fechaHoraLimite } from '../fechas/plazos.ts';
 
 const FUENTE = 'docs/documento_fuente.md §8.3 (ESC 2022; protocolo del servicio)';
@@ -42,14 +42,20 @@ export function reglaAas(e: EntradaAas, ctx: ContextoReglas): ResultadoFarmaco {
 
   if (e.dosisDiariaMg <= 200) {
     if (ctx.espacioCerrado) {
-      return {
+      // Punto 8 (3.1): se propone suspender 5 días (criterio más prudente en espacio
+      // cerrado) y queda un punto amarillo para confirmar la suspensión.
+      const plazo = plazoDesdeDias(ctx, 5);
+      const r: ResultadoFarmaco = {
         ...base,
-        accion: 'consultar',
-        textoPaciente:
-          'Sobre este medicamento, el anestesiólogo le llamará para indicarle qué hacer. No lo cambie por su cuenta.',
-        reglaAplicada: 'AAS ≤ 200 mg en cirugía de espacio cerrado: requiere confirmación',
-        requiereConfirmacion: true,
+        accion: 'suspender',
+        fechaHoraUltimaToma: plazo.fechaHoraUltimaToma,
+        textoPaciente: plazo.textoPaciente,
+        reglaAplicada: 'AAS ≤ 200 mg en cirugía de espacio cerrado: suspender 5 días (criterio prudente)',
+        requiereConfirmacion: false,
+        textoAnestesiologo: 'Confirmar si el riesgo de sangrado del SNC justifica mantener el AAS en lugar de suspenderlo.',
+        puntoValidacion: { tipo: 'validar', motivo: 'AAS en cirugía de espacio cerrado: se propone suspender 5 días; confirmar la suspensión.' },
       };
+      return aplicarHoraAsumida(r, plazo);
     }
     return {
       ...base,
@@ -71,19 +77,20 @@ export function reglaAas(e: EntradaAas, ctx: ContextoReglas): ResultadoFarmaco {
     };
   }
   if (e.indicacionCardiovascular) {
+    // Punto 8 (3.2): se propone MANTENER a dosis cardioprotectora (100 mg/día) como
+    // pauta concreta, con punto amarillo para confirmar la bajada de dosis.
     return {
       ...base,
-      accion: 'consultar',
-      textoPaciente:
-        'Sobre este medicamento, el anestesiólogo le confirmará qué hacer. No lo cambie por su cuenta.',
-      reglaAplicada: 'AAS > 200 mg/día que debe suspenderse con indicación cardiovascular: requiere confirmación',
-      requiereConfirmacion: true,
-      textoAnestesiologo: 'Valorar pasar a 100 mg/día.',
+      accion: 'ajustar',
+      textoPaciente: 'Tome solo 100 mg al día (en lugar de su dosis habitual), también el día de la intervención, con un sorbo de agua. No deje de tomarlo.',
+      reglaAplicada: 'AAS > 200 mg/día con indicación cardiovascular: mantener a dosis cardioprotectora (100 mg/día)',
+      requiereConfirmacion: false,
+      textoAnestesiologo: 'Pasar a 100 mg/día (dosis cardioprotectora); confirmar la bajada de dosis.',
+      puntoValidacion: { tipo: 'validar', motivo: 'AAS > 200 mg con indicación cardiovascular: se propone bajar a 100 mg/día; confirmar.' },
     };
   }
   const plazo = plazoDesdeDias(ctx, 5);
-  if (faltaHora(plazo)) return resultadoFaltaHora(base);
-  return {
+  const r: ResultadoFarmaco = {
     ...base,
     accion: 'suspender',
     fechaHoraUltimaToma: plazo.fechaHoraUltimaToma,
@@ -91,6 +98,7 @@ export function reglaAas(e: EntradaAas, ctx: ContextoReglas): ResultadoFarmaco {
     reglaAplicada: 'AAS > 200 mg/día con muy alto riesgo de sangrado o neuroaxial: suspender 5 días',
     requiereConfirmacion: false,
   };
+  return aplicarHoraAsumida(r, plazo);
 }
 
 // ————————————— P2Y12 —————————————
@@ -119,7 +127,6 @@ export function reglaP2y12(e: EntradaP2y12, ctx: ContextoReglas): ResultadoFarma
     : DIAS_P2Y12[e.principio].estandar;
   const plazo = plazoDesdeDias(ctx, dias);
   const baseP2y12 = { idFarmaco: e.idFarmaco, nombreComercial: e.nombreComercial, principiosActivos: [e.principio], fuente: FUENTE };
-  if (faltaHora(plazo)) return resultadoFaltaHora(baseP2y12);
 
   const res: ResultadoFarmaco = {
     ...baseP2y12,
@@ -127,17 +134,26 @@ export function reglaP2y12(e: EntradaP2y12, ctx: ContextoReglas): ResultadoFarma
     fechaHoraUltimaToma: plazo.fechaHoraUltimaToma,
     textoPaciente: plazo.textoPaciente,
     reglaAplicada: `${e.principio}: suspender ${dias} días${neuroaxialOProfundo(ctx) ? ' (neuroaxial/bloqueo profundo)' : ''}`,
-    requiereConfirmacion: e.monoterapia === true || e.portadorStent === true,
+    requiereConfirmacion: false,
   };
+  // Punto 8: monoterapia P2Y12 → se propone la suspensión y se sugiere sustituir por
+  // AAS 100 mg durante la retirada; punto amarillo.
   if (e.monoterapia) {
-    res.accion = 'consultar';
     res.textoAnestesiologo = 'Valorar sustituir por AAS 100 mg/día durante la retirada.';
+    res.puntoValidacion = { tipo: 'validar', motivo: `${e.principio} en monoterapia: se propone suspender ${dias} días; valorar sustituir por AAS 100 mg/día.` };
   }
+  // Punto 8 (3.4): portador de stent → se propone mantener la doble antiagregación y
+  // diferir la cirugía electiva; punto rojo.
   if (e.portadorStent) {
-    res.accion = 'consultar';
-    res.reglaAplicada += ' — portador de stent: ninguna suspensión sin confirmación (§8.3)';
+    res.accion = 'mantener';
+    res.textoPaciente = TEXTO_MANTENER;
+    delete res.fechaHoraUltimaToma;
+    res.reglaAplicada = `${e.principio}: portador de stent → mantener la doble antiagregación y diferir la cirugía electiva (§8.3)`;
+    res.textoAnestesiologo = 'Portador de stent: valorar diferir la cirugía electiva hasta cumplir el plazo del stent; no suspender la doble antiagregación sin cardiología (§8.3).';
+    res.puntoValidacion = { tipo: 'posponer', motivo: `${e.principio}: portador de stent; valorar diferir la cirugía / no suspender la doble antiagregación.` };
+    return res;
   }
-  return res;
+  return aplicarHoraAsumida(res, plazo);
 }
 
 // ————————————— Stent reciente (§8.3 + Decisión 3) —————————————
@@ -207,26 +223,24 @@ export function evaluarStent(e: EntradaStent, ctx: ContextoReglas): ResultadoSte
 export function reglaTriflusal(idFarmaco: string, nombreComercial: string, ctx: ContextoReglas): ResultadoFarmaco {
   const dias = neuroaxialOProfundo(ctx) ? 10 : 7;
   const plazo = plazoDesdeDias(ctx, dias);
-  if (faltaHora(plazo)) return resultadoFaltaHora({ idFarmaco, nombreComercial, principiosActivos: ['triflusal'], fuente: FUENTE });
-  return {
+  return aplicarHoraAsumida({
     idFarmaco, nombreComercial, principiosActivos: ['triflusal'],
     accion: 'suspender', fechaHoraUltimaToma: plazo.fechaHoraUltimaToma, textoPaciente: plazo.textoPaciente,
     reglaAplicada: `Triflusal: suspender ${dias} días${neuroaxialOProfundo(ctx) ? ' (neuroaxial/bloqueo profundo)' : ''}`,
     fuente: FUENTE, requiereConfirmacion: false,
-  };
+  }, plazo);
 }
 
 /** Dipiridamol: 24 h; 48 h con neuroaxial o bloqueo profundo. */
 export function reglaDipiridamol(idFarmaco: string, nombreComercial: string, ctx: ContextoReglas): ResultadoFarmaco {
   const horas = neuroaxialOProfundo(ctx) ? 48 : 24;
   const plazo = plazoDesdeHoras(ctx, horas);
-  if (faltaHora(plazo)) return resultadoFaltaHora({ idFarmaco, nombreComercial, principiosActivos: ['dipiridamol'], fuente: FUENTE });
-  return {
+  return aplicarHoraAsumida({
     idFarmaco, nombreComercial, principiosActivos: ['dipiridamol'],
     accion: 'suspender', fechaHoraUltimaToma: plazo.fechaHoraUltimaToma, textoPaciente: plazo.textoPaciente,
     reglaAplicada: `Dipiridamol: suspender ${horas} h${neuroaxialOProfundo(ctx) ? ' (neuroaxial/bloqueo profundo)' : ''}`,
     fuente: FUENTE, requiereConfirmacion: false,
-  };
+  }, plazo);
 }
 
 /** Cilostazol: 3 días si riesgo hemorrágico alto o neuroaxial/bloqueo profundo; si no, mantener. */
@@ -241,13 +255,12 @@ export function reglaCilostazol(idFarmaco: string, nombreComercial: string, ctx:
     };
   }
   const plazo = plazoDesdeDias(ctx, 3);
-  if (faltaHora(plazo)) return resultadoFaltaHora({ idFarmaco, nombreComercial, principiosActivos: ['cilostazol'], fuente: FUENTE });
-  return {
+  return aplicarHoraAsumida({
     idFarmaco, nombreComercial, principiosActivos: ['cilostazol'],
     accion: 'suspender', fechaHoraUltimaToma: plazo.fechaHoraUltimaToma, textoPaciente: plazo.textoPaciente,
     reglaAplicada: 'Cilostazol: suspender 3 días (riesgo hemorrágico alto o neuroaxial/bloqueo profundo)',
     fuente: FUENTE, requiereConfirmacion: false,
-  };
+  }, plazo);
 }
 
 /** Sulodexida: 48 h si riesgo hemorrágico alto o neuroaxial/bloqueo profundo; si no, mantener. (No interviene en pruebas, §7.3). */
@@ -262,13 +275,12 @@ export function reglaSulodexida(idFarmaco: string, nombreComercial: string, ctx:
     };
   }
   const plazo = plazoDesdeHoras(ctx, 48);
-  if (faltaHora(plazo)) return resultadoFaltaHora({ idFarmaco, nombreComercial, principiosActivos: ['sulodexida'], fuente: 'docs/documento_fuente.md §8.3' });
-  return {
+  return aplicarHoraAsumida({
     idFarmaco, nombreComercial, principiosActivos: ['sulodexida'],
     accion: 'suspender', fechaHoraUltimaToma: plazo.fechaHoraUltimaToma, textoPaciente: plazo.textoPaciente,
     reglaAplicada: 'Sulodexida: suspender 48 h (riesgo hemorrágico alto o neuroaxial/bloqueo profundo)',
     fuente: 'docs/documento_fuente.md §8.3', requiereConfirmacion: false,
-  };
+  }, plazo);
 }
 
 /** Inhibidores GP IIb/IIIa y cangrelor: uso hospitalario, con sus plazos; siempre requieren confirmación. */
@@ -285,12 +297,16 @@ export function reglaGpIibIiia(idFarmaco: string, nombreComercial: string, princ
   const horas = neuroaxialOProfundo(ctx) ? HORAS_GP[principio].neuroaxial : HORAS_GP[principio].estandar;
   // Perfusión IV hospitalaria: la última administración permitida es el propio límite.
   const limite = fechaHoraLimite(ctx.fechaHoraIntervencion, horas);
+  // Punto 8 (3.3): se propone el plazo ya calculado (manejo hospitalario) y queda un
+  // punto amarillo para confirmarlo con el equipo.
   return {
     idFarmaco, nombreComercial, principiosActivos: [principio],
-    accion: 'consultar', fechaHoraUltimaToma: limite,
-    textoPaciente: 'Uso hospitalario: el anestesiólogo indicará la pauta. No lo cambie por su cuenta.',
-    reglaAplicada: `${principio} (GP IIb/IIIa o cangrelor): ${horas} h (uso hospitalario); requiere confirmación`,
-    fuente: FUENTE, requiereConfirmacion: true,
+    accion: 'suspender', fechaHoraUltimaToma: limite,
+    textoPaciente: 'Este medicamento se administra en el hospital; el equipo lo gestiona. Usted no tiene que hacer nada.',
+    reglaAplicada: `${principio} (GP IIb/IIIa o cangrelor): plazo ${horas} h (uso hospitalario)`,
+    fuente: FUENTE, requiereConfirmacion: false,
+    textoAnestesiologo: `Antiagregante de uso hospitalario (plazo ${horas} h): confirmar el manejo con el equipo.`,
+    puntoValidacion: { tipo: 'validar', motivo: `${principio}: antiagregante de uso hospitalario (plazo ${horas} h); confirmar con el equipo.` },
   };
 }
 
@@ -304,8 +320,7 @@ export function reglaP2y12Oftalmo(e: EntradaP2y12, ctx: ContextoReglas): Resulta
   const dias = DIAS_P2Y12[e.principio].estandar; // plazos del protocolo (no neuroaxial en oftalmo)
   const plazo = plazoDesdeDias(ctx, dias);
   const baseOft = { idFarmaco: e.idFarmaco, nombreComercial: e.nombreComercial, principiosActivos: [e.principio], fuente: FUENTE };
-  if (faltaHora(plazo)) return resultadoFaltaHora(baseOft);
-  return {
+  return aplicarHoraAsumida({
     ...baseOft,
     accion: 'suspender',
     fechaHoraUltimaToma: plazo.fechaHoraUltimaToma,
@@ -314,5 +329,5 @@ export function reglaP2y12Oftalmo(e: EntradaP2y12, ctx: ContextoReglas): Resulta
     fuente: FUENTE,
     requiereConfirmacion: false,
     textoAnestesiologo: 'Sustituir antiagregante por AAS 100 mg/día; suspender P2Y12 con plazos del protocolo.',
-  };
+  }, plazo);
 }

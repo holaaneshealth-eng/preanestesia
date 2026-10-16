@@ -95,8 +95,11 @@ describe('Casos A · anticoagulantes', () => {
   });
   it('A7 edoxabán sin creatinina: requiere confirmación e indica el dato que falta', () => {
     const r = reglaAcod({ idFarmaco: 'edoxaban', nombreComercial: 'Lixiana', principioActivo: 'edoxaban', subtipo: 'antixa' }, ctx({ riesgoHemorragico: 'bajo', neuroaxial: false, aclaramiento: null, pautaFarmaco: P('09:00') }));
-    expect(r.requiereConfirmacion).toBeTrue();
-    expect(r.datoQueFalta).toContain('aclaramiento');
+    // Punto 8 (1.1): sin aclaramiento se propone el tramo más prudente y queda un punto amarillo.
+    expect(r.accion).toBe('suspender');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
+    expect(r.textoAnestesiologo).toContain('función renal');
   });
   it('A9 acenocumarol 18:00 por FA sin alto riesgo: 3 días, última dom 11/10 18:00', () => {
     const r = reglaAvk({ idFarmaco: 'acenocumarol', nombreComercial: 'Sintrom', principio: 'acenocumarol', altoRiesgoTromboembolico: false }, ctx({ riesgoHemorragico: 'bajo', pautaFarmaco: P('18:00') }));
@@ -110,12 +113,19 @@ describe('Casos A · anticoagulantes', () => {
   });
   it('A8 apixabán por FA con ictus < 3 meses: alto riesgo trombótico → confirmación con cambio a acenocumarol', () => {
     const r = reglaAcod({ idFarmaco: 'apixaban', nombreComercial: 'Eliquis', principioActivo: 'apixaban', subtipo: 'antixa', altoRiesgoTromboticoConfirmar: true }, ctx({ riesgoHemorragico: 'alto', pautaFarmaco: P('09:00', '21:00') }));
-    expect(r.requiereConfirmacion).toBeTrue();
-    expect(r.textoAnestesiologo).toContain('acenocumarol');
+    // Punto 8 (1.2): se propone suspensión estándar del tramo; punto rojo; NO acenocumarol/puente.
+    expect(r.accion).toBe('suspender');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('posponer');
+    expect(r.textoAnestesiologo).toContain('no se recomienda cambiar a acenocumarol');
+    expect(r.textoAnestesiologo).toContain('hematología o cardiología');
   });
   it('A11 warfarina por válvula aórtica mecánica sin FA: confirmación por válvula (sin puente)', () => {
     const r = reglaAvk({ idFarmaco: 'warfarina', nombreComercial: 'Aldocumar', principio: 'warfarina', altoRiesgoTromboembolico: false, portadorValvulaMecanicaOStent: true }, ctx({ riesgoHemorragico: 'alto', pautaFarmaco: P('18:00') }));
-    expect(r.farmaco.requiereConfirmacion).toBeTrue();
+    // Punto 8 (2.2): se propone la suspensión estándar y queda un punto rojo.
+    expect(r.farmaco.accion).toBe('suspender');
+    expect(r.farmaco.requiereConfirmacion).toBeFalse();
+    expect(r.farmaco.puntoValidacion?.tipo).toBe('posponer');
     expect(r.puente).toBeUndefined();
   });
   it('A13 acenocumarol + catarata con bloqueo retrobulbar (oftalmo moderado-alto): suspender 3 días, no mantener', () => {
@@ -127,7 +137,10 @@ describe('Casos A · anticoagulantes', () => {
     const r = reglaAvk({ idFarmaco: 'acenocumarol', nombreComercial: 'Sintrom', principio: 'acenocumarol', altoRiesgoTromboembolico: true }, ctx({ pesoKg: 70, aclaramiento: 25, pautaFarmaco: P('18:00') }));
     expect(r.puente?.dosisMgPorToma).toBe(70);
     expect(r.puente?.intervaloHoras).toBe(24);
-    expect(r.farmaco.requiereConfirmacion).toBeTrue();
+    // Punto 8 (2.1): se propone la pauta de puente; punto rojo; sin «requiere confirmación».
+    expect(r.farmaco.accion).toBe('suspender');
+    expect(r.farmaco.requiereConfirmacion).toBeFalse();
+    expect(r.farmaco.puntoValidacion?.tipo).toBe('posponer');
   });
 });
 
@@ -167,8 +180,11 @@ describe('Casos C · antiagregantes', () => {
   it('C1 AAS 100 mg: mantener', () => {
     expect(reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 100 }, ctx()).accion).toBe('mantener');
   });
-  it('C2 AAS 100 mg craneotomía intracraneal: confirmación', () => {
-    expect(reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 100 }, ctx({ espacioCerrado: true })).requiereConfirmacion).toBeTrue();
+  it('C2 AAS 100 mg craneotomía intracraneal: suspender 5 días + validación (punto 8)', () => {
+    const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 100 }, ctx({ espacioCerrado: true, pautaFarmaco: P('09:00') }));
+    expect(r.accion).toBe('suspender');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
   it('C3 AAS 300 mg no cardiovascular, colecistectomía (sin muy alto riesgo ni neuroaxial): mantener', () => {
     const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 300 }, ctx({ pautaFarmaco: P('09:00') }));
@@ -184,9 +200,11 @@ describe('Casos C · antiagregantes', () => {
     expect(r.accion).toBe('suspender');
     expect(esFecha(r.fechaHoraUltimaToma, 2026, 9, 9, 9, 0)).toBeTrue();
   });
-  it('C4b AAS 300 mg cardiovascular, craneotomía (espacio cerrado): confirmación + sugerencia 100 mg', () => {
+  it('C4b AAS 300 mg cardiovascular, craneotomía (espacio cerrado): mantener 100 mg + validación (punto 8)', () => {
     const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 300, indicacionCardiovascular: true }, ctx({ espacioCerrado: true }));
-    expect(r.requiereConfirmacion).toBeTrue();
+    expect(r.accion).toBe('ajustar');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
     expect(r.textoAnestesiologo).toContain('100 mg');
   });
   it('C4c AAS 300 mg no cardiovascular, vitrectomía (retina): suspender 5 días (vie 09/10 09:00)', () => {
@@ -212,17 +230,21 @@ describe('Casos C · antiagregantes', () => {
     expect(s.suprimirPautaAntiagregantesEnHoja).toBeTrue();
     expect(s.alertas[0]?.gravedad).toBe('roja');
   });
-  it('C6 stent por SCA hace 14 meses: no reciente; clopidogrel 5 días (vie 09/10 09:00) PERO requiere confirmación por portar stent', () => {
+  it('C6 stent por SCA hace 14 meses: no reciente; clopidogrel portador de stent → mantener doble antiagregación + punto rojo (punto 8)', () => {
     const s = evaluarStent({ mesesDesdeImplante: 14, traSca: true }, ctx());
     expect(s.recienteRequiereConfirmacion).toBeFalse();
     const r = reglaP2y12({ idFarmaco: 'clopidogrel', nombreComercial: 'Plavix', principio: 'clopidogrel', monoterapia: false, portadorStent: true }, ctx({ pautaFarmaco: P('09:00') }));
-    expect(esFecha(r.fechaHoraUltimaToma, 2026, 9, 9, 9, 0)).toBeTrue();
-    expect(r.requiereConfirmacion).toBeTrue(); // §8.3: ninguna suspensión sin confirmación en portador de stent
+    // Punto 8 (3.4): portador de stent → mantener la doble antiagregación y diferir; punto rojo.
+    expect(r.accion).toBe('mantener');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('posponer');
   });
-  it('C7 clopidogrel 09:00 monoterapia, raquídea: 7 días, última mié 07/10 09:00, confirmación', () => {
+  it('C7 clopidogrel 09:00 monoterapia, raquídea: 7 días, última mié 07/10 09:00 + validación (punto 8)', () => {
     const r = reglaP2y12({ idFarmaco: 'clopidogrel', nombreComercial: 'Plavix', principio: 'clopidogrel', monoterapia: true }, ctx({ neuroaxial: true, pautaFarmaco: P('09:00') }));
+    expect(r.accion).toBe('suspender');
     expect(esFecha(r.fechaHoraUltimaToma, 2026, 9, 7, 9, 0)).toBeTrue();
-    expect(r.requiereConfirmacion).toBeTrue();
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
   it('C8 triflusal 300 mg 09/21: 7 días, última mié 07/10 21:00', () => {
     const r = reglaTriflusal('t', 'Disgren', ctx({ pautaFarmaco: P('09:00', '21:00') }));
@@ -306,8 +328,10 @@ describe('Casos E · otros fármacos', () => {
   it('E2 enalapril + IC con FEVI 30 %: mantener', () => {
     expect(reglaIecaAra2({ idFarmaco: 'ena', nombreComercial: 'Renitec', principio: 'enalapril', icDisfuncionSistolica: true, infartoReciente: false, proteinuriaONefropatia: false }, ctx()).accion).toBe('mantener');
   });
-  it('E3 Entresto: confirmación', () => {
-    expect(reglaSacubitriloValsartan({ idFarmaco: 's', nombreComercial: 'Entresto' }).requiereConfirmacion).toBeTrue();
+  it('E3 Entresto: suspender 24 h + validación (punto 8)', () => {
+    const r = reglaSacubitriloValsartan({ idFarmaco: 's', nombreComercial: 'Entresto' }, ctx({ pautaFarmaco: P('09:00') }));
+    expect(r.accion).toBe('suspender');
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
   it('E4 furosemida 09:00: no la mañana; última mié 14/10 09:00', () => {
     const r = reglaDiuretico({ idFarmaco: 'f', nombreComercial: 'Seguril', principio: 'furosemida' }, ctx({ pautaFarmaco: P('09:00') }));
@@ -323,9 +347,11 @@ describe('Casos E · otros fármacos', () => {
     expect(esFecha(r.fechaHoraUltimaToma, 2026, 9, 13, 21, 0)).toBeTrue();
     expect(r.textoAnestesiologo).toContain('meperidina');
   });
-  it('E7 tranilcipromina: confirmación + nota IMAO', () => {
+  it('E7 tranilcipromina: mantener + anestesia segura IMAO + validación (punto 8)', () => {
     const r = reglaImaoIrreversible({ idFarmaco: 't', nombreComercial: 'Parnate', principio: 'tranilcipromina' });
-    expect(r.requiereConfirmacion).toBeTrue();
+    expect(r.accion).toBe('mantener');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
     expect(r.textoAnestesiologo).toContain('azul de metileno');
   });
   it('E8 rasagilina: mantener + nota', () => {
@@ -348,13 +374,17 @@ describe('Casos E · otros fármacos', () => {
   });
   it('E12 adalimumab cada 2 semanas, última dosis jue 08/10: confirmación + detecta mitad de ciclo', () => {
     const r = reglaBiologico({ idFarmaco: 'a', nombreComercial: 'Humira', principio: 'adalimumab', periodicidadDias: 14, fechaUltimaDosis: new Date(2026, 9, 8) }, IV);
-    expect(r.requiereConfirmacion).toBeTrue();
-    expect(r.datoQueFalta).toBeUndefined(); // ya tiene la fecha
+    // Punto 8 (7.3): se propone programar al final del ciclo; punto amarillo; sin «requiere confirmación».
+    expect(r.accion).toBe('mantener');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
     expect(r.textoAnestesiologo).toContain('mitad de ciclo');
   });
-  it('E13 bevacizumab hace 4 semanas: alerta de diferir + confirmación', () => {
+  it('E13 bevacizumab hace 4 semanas: valorar diferir + punto rojo + alerta roja (punto 8)', () => {
     const r = reglaAntiangiogenico({ idFarmaco: 'b', nombreComercial: 'Avastin', principio: 'bevacizumab', semanasDesdeUltimaDosis: 4 });
-    expect(r.farmaco.requiereConfirmacion).toBeTrue();
+    expect(r.farmaco.requiereConfirmacion).toBeFalse();
+    expect(r.farmaco.puntoValidacion?.tipo).toBe('posponer');
+    expect(r.alerta?.gravedad).toBe('roja');
     expect(r.alerta?.mensaje).toContain('6-8 semanas');
   });
   it('E14 aflibercept intravítreo: mantener', () => {
@@ -364,9 +394,11 @@ describe('Casos E · otros fármacos', () => {
     const r = reglaFitoterapia({ idFarmaco: 'g', nombreComercial: 'Ginkgo', principio: 'ginkgo' }, ctx({ pautaFarmaco: P('09:00') }));
     expect(esFecha(r.fechaHoraUltimaToma, 2026, 8, 30, 9, 0)).toBeTrue(); // día 15 previo = 30/09
   });
-  it('E16 anticonceptivo oral, riesgo trombótico alto, AG: confirmación + sugammadex oral', () => {
+  it('E16 anticonceptivo oral, riesgo trombótico alto, AG: mantener + validación + sugammadex oral (punto 8)', () => {
     const r = reglaAnticonceptivoThs({ idFarmaco: 'aco', nombreComercial: 'ACO', principio: 'etinilestradiol', via: 'oral' }, ctx({ riesgoTromboticoAlto: true }));
-    expect(r.requiereConfirmacion).toBeTrue();
+    expect(r.accion).toBe('mantener');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
     const sg = avisoSugammadex({ mujerConAnticonceptivoHormonal: true, tipo: 'oral', posibleAnestesiaGeneral: true });
     expect(sg.textoPaciente).toContain('olvidada');
   });

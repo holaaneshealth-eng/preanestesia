@@ -41,6 +41,9 @@ export function farmacoQrDesde(f: FarmacoPlan): FarmacoQr {
     ac: f.meta.ac,
     rc: r.requiereConfirmacion,
   };
+  // Punto 8: si la regla deja un punto de validación ROJO, la hoja añade la línea de
+  // revisión por el anestesiólogo. En el QR viaja solo la clave (rv), no el texto.
+  if (r.puntoValidacion?.tipo === 'posponer') item.rv = true;
   if (f.meta.pd !== undefined) item.pd = f.meta.pd;
   if (r.confirmadoPor) item.cf = r.confirmadoPor;
   // Fármacos sin plazo (mantener/consultar): el texto fijo viaja en el QR (para el

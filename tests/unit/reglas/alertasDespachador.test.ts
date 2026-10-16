@@ -36,15 +36,15 @@ describe('§8 · el despachador conserva las alertas de las reglas', () => {
       ctx({ aclaramiento: 15 }), HECHOS_VACIOS,
     );
     const roja = (r.alertas ?? []).find((a) => a.gravedad === 'roja');
-    expect(roja?.mensaje).toMatch(/contraindicado/i);
+    expect(roja?.mensaje).toMatch(/contraindicaci/i);
   });
 
-  it('antiangiogénico sistémico reciente → alerta amarilla de diferir 6-8 semanas', () => {
+  it('antiangiogénico sistémico reciente → alerta ROJA de diferir 6-8 semanas (punto 8)', () => {
     const r = evaluarFarmacoUi(
       d('antiangiogenico', { idFarmaco: 'bevacizumab', nombreComercial: 'Avastin', principiosActivos: ['bevacizumab'], via: 'subcutanea', fechaUltimaDosis: new Date(IV_LEJANA.getTime() - 28 * 86_400_000) }),
       ctx(), HECHOS_VACIOS,
     );
-    expect(mensajes(r).some((m) => m.startsWith('amarilla') && /6-8 semanas/.test(m))).toBeTrue();
+    expect(mensajes(r).some((m) => m.startsWith('roja') && /6-8 semanas/.test(m))).toBeTrue();
   });
 
   /**
@@ -76,13 +76,15 @@ describe('§8 · el despachador conserva las alertas de las reglas', () => {
 });
 
 describe('§4 paso 1 · plazo no alcanzable en el despachador', () => {
-  it('ginkgo (14 días) con intervención en 2 días → consultar + alerta roja', () => {
+  it('ginkgo (14 días) con intervención en 2 días → plazo no alcanzable: «no tome más dosis» + punto rojo + alerta roja (punto 8)', () => {
     const r = evaluarFarmacoUi(
       d('fitoterapia', { idFarmaco: 'ginkgo', nombreComercial: 'Ginkgo', principiosActivos: ['ginkgo'], horas: ['09:00'] }),
       ctx({ fechaHoraIntervencion: new Date(Date.now() + 2 * 86_400_000) }), HECHOS_VACIOS,
     );
-    expect(r.accion).toBe('consultar');
-    expect(r.requiereConfirmacion).toBeTrue();
+    expect(r.accion).toBe('suspender');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.textoPaciente).toContain('No tome más dosis');
+    expect(r.puntoValidacion?.tipo).toBe('posponer');
     expect((r.alertas ?? []).some((a) => a.gravedad === 'roja' && /no se puede cumplir el plazo/i.test(a.mensaje))).toBeTrue();
   });
 

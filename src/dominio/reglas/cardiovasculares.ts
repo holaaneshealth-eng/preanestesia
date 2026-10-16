@@ -8,7 +8,7 @@
  *   estatinas: mantener.
  */
 import type { ContextoReglas, ResultadoFarmaco } from '../tipos.ts';
-import { TEXTO_MANTENER } from './motor.ts';
+import { TEXTO_MANTENER, plazoDesdeHoras, aplicarHoraAsumida } from './motor.ts';
 import { fechaLarga, horaReloj } from '../fechas/ultimaToma.ts';
 
 /** Última toma el día previo a la intervención, a la hora habitual más tardía de la pauta. */
@@ -63,14 +63,21 @@ export function reglaIecaAra2(e: EntradaIecaAra2, ctx: ContextoReglas): Resultad
   }
 
   if (!conocidas) {
+    // Punto 8 (5.1): sin saber si hay IC/infarto/nefropatía, la pauta por defecto es
+    // no tomar la dosis de la mañana (pauta estándar de IECA/ARA-II cuando no hay
+    // indicación de mantener); punto amarillo para confirmar la indicación.
+    const ultima = ultimaTomaDiaPrevio(ctx);
+    const tieneTomaNoct = (ctx.pautaFarmaco?.horas ?? []).some((h) => parseInt((h.split(':')[0] ?? '0'), 10) >= 18);
+    const col = tieneTomaNoct ? ' (la toma de la noche anterior sí)' : '';
     return {
       ...base,
-      accion: 'consultar',
-      textoPaciente:
-        'Sobre este medicamento, el anestesiólogo le confirmará qué hacer. No lo cambie por su cuenta.',
-      reglaAplicada: 'IECA/ARA-II: falta información sobre IC/infarto/nefropatía para decidir',
-      requiereConfirmacion: true,
-      datoQueFalta: 'IC con disfunción sistólica / infarto reciente / proteinuria o nefropatía',
+      accion: 'suspender',
+      fechaHoraUltimaToma: ultima,
+      textoPaciente: `No lo tome el día de la intervención${col}. Su última toma será el ${fechaLarga(ultima)} a las ${horaReloj(ultima)}.`,
+      reglaAplicada: 'IECA/ARA-II: sin datos de IC/infarto/nefropatía → no tomar el día de la intervención (pauta por defecto)',
+      requiereConfirmacion: false,
+      textoAnestesiologo: 'No consta IC con disfunción sistólica, infarto reciente ni proteinuria/nefropatía: pauta por defecto (no tomar el día de la IQ); confirmar si procede mantener.',
+      puntoValidacion: { tipo: 'validar', motivo: 'IECA/ARA-II: confirmar si hay IC/infarto/nefropatía (mantener) o no (no tomar el día de la IQ).' },
     };
   }
 
@@ -97,19 +104,26 @@ export interface EntradaSacubitriloValsartan {
   nombreComercial: string;
 }
 
-/** Sacubitrilo/valsartán (§8.10): requiere confirmación del anestesiólogo. */
-export function reglaSacubitriloValsartan(e: EntradaSacubitriloValsartan): ResultadoFarmaco {
-  return {
+/**
+ * Sacubitrilo/valsartán (§8.10). Punto 8 (5.2): se propone suspender 24 h antes
+ * (vida media larga; se trata como IECA/ARA-II de alto efecto) y queda un punto
+ * amarillo para confirmar la suspensión.
+ */
+export function reglaSacubitriloValsartan(e: EntradaSacubitriloValsartan, ctx: ContextoReglas): ResultadoFarmaco {
+  const plazo = plazoDesdeHoras(ctx, 24);
+  return aplicarHoraAsumida({
     idFarmaco: e.idFarmaco,
     nombreComercial: e.nombreComercial,
     principiosActivos: ['sacubitrilo', 'valsartan'],
-    accion: 'consultar',
-    textoPaciente:
-      'Sobre este medicamento, el anestesiólogo le llamará para indicarle qué hacer. No lo cambie por su cuenta.',
-    reglaAplicada: 'Sacubitrilo/valsartán: requiere confirmación',
+    accion: 'suspender',
+    fechaHoraUltimaToma: plazo.fechaHoraUltimaToma,
+    textoPaciente: plazo.textoPaciente,
+    reglaAplicada: 'Sacubitrilo/valsartán: suspender 24 h antes (vida media larga; se trata como IECA/ARA-II de alto efecto)',
     fuente: FUENTE,
-    requiereConfirmacion: true,
-  };
+    requiereConfirmacion: false,
+    textoAnestesiologo: 'Sacubitrilo/valsartán: se propone suspender 24 h antes; confirmar la suspensión.',
+    puntoValidacion: { tipo: 'validar', motivo: 'Sacubitrilo/valsartán: se propone suspender 24 h antes; confirmar.' },
+  }, plazo);
 }
 
 export interface EntradaDiuretico {

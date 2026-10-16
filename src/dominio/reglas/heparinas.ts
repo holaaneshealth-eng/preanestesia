@@ -11,7 +11,7 @@
  *   riesgo hemorrágico/CrCl < 50).
  */
 import type { ContextoReglas, ResultadoFarmaco, Alerta } from '../tipos.ts';
-import { neuroaxialOProfundo, plazoDesdeHoras, faltaHora, resultadoFaltaHora } from './motor.ts';
+import { neuroaxialOProfundo, plazoDesdeHoras, aplicarHoraAsumida } from './motor.ts';
 import { fechaHoraLimite } from '../fechas/plazos.ts';
 
 const FUENTE = 'docs/documento_fuente.md §8.4 (SETH; ASRA 2018; protocolo del servicio)';
@@ -106,33 +106,30 @@ export function reglaHbpm(e: EntradaHbpm, ctx: ContextoReglas): ResultadoFarmaco
     fuente: FUENTE,
   };
 
-  if (e.tipo === 'indeterminada') {
-    return {
-      ...base,
-      accion: 'consultar',
-      textoPaciente:
-        'Sobre esta heparina, el anestesiólogo le confirmará la última dosis. No la cambie por su cuenta.',
-      reglaAplicada: 'HBPM: la dosis no encaja en profilaxis ni tratamiento (tablas SETH); preguntar',
-      requiereConfirmacion: true,
-      datoQueFalta: 'si la HBPM es a dosis profiláctica o terapéutica',
-    };
-  }
+  // Punto 8 (6.1): si la dosis no encaja en profilaxis ni tratamiento, se asume
+  // TERAPÉUTICA (24 h, el plazo más largo) y queda un punto amarillo para confirmar.
+  const indeterminada = e.tipo === 'indeterminada';
+  const tipoEfectivo: 'profilactica' | 'terapeutica' = e.tipo === 'profilactica' ? 'profilactica' : 'terapeutica';
 
-  const horas = e.tipo === 'profilactica' ? 12 : 24;
+  const horas = tipoEfectivo === 'profilactica' ? 12 : 24;
   const plazo = plazoDesdeHoras(ctx, horas, { permitirAdelanto: true });
-  if (faltaHora(plazo)) return resultadoFaltaHora(base);
   const res: ResultadoFarmaco = {
     ...base,
     accion: 'suspender',
     fechaHoraUltimaToma: plazo.fechaHoraUltimaToma,
     textoPaciente: plazo.textoPaciente,
-    reglaAplicada: `HBPM ${e.tipo}: última dosis ${horas} h antes`,
+    reglaAplicada: indeterminada
+      ? 'HBPM: dosis no clasificable (tablas SETH); se asume terapéutica (24 h, plazo más prudente)'
+      : `HBPM ${tipoEfectivo}: última dosis ${horas} h antes`,
     requiereConfirmacion: false,
   };
-  if (e.tipo === 'terapeutica') {
+  if (indeterminada) {
+    res.textoAnestesiologo = 'Dosis no clasificable en profilaxis ni tratamiento (tablas SETH): se asume terapéutica (24 h); confirmar si es profiláctica (12 h).';
+    res.puntoValidacion = { tipo: 'validar', motivo: 'HBPM: dosis no clasificable; se asume terapéutica (24 h). Confirmar si es profiláctica (12 h) o terapéutica.' };
+  } else if (tipoEfectivo === 'terapeutica') {
     res.textoAnestesiologo = 'Valorar actividad anti-Xa si hay dudas.';
   }
-  return res;
+  return aplicarHoraAsumida(res, plazo);
 }
 
 // ————————————— Heparina sódica IV —————————————
@@ -180,20 +177,25 @@ export function reglaFondaparinux(e: EntradaFondaparinux, ctx: ContextoReglas): 
   const altoRiesgoHemo = ctx.riesgoHemorragico === 'alto';
 
   if (e.dosis === 'profilactico') {
-    // CrCl < 20: contraindicado.
+    // Punto 8 (6.2): CrCl < 20 → se propone el plazo MÁS LARGO que recoge el documento
+    // fuente para fondaparinux (72 h, terapéutico con alargamiento) y queda un punto
+    // ROJO por la contraindicación relativa con aclaramiento muy bajo.
     if (crcl !== null && crcl < 20) {
+      const plazo72 = plazoDesdeHoras(ctx, 72, { permitirAdelanto: true });
       return {
-        farmaco: {
+        farmaco: aplicarHoraAsumida({
           ...base,
-          accion: 'consultar',
-          textoPaciente:
-            'Sobre este medicamento, el anestesiólogo le indicará qué hacer. No lo cambie por su cuenta.',
-          reglaAplicada: 'Fondaparinux profiláctico con CrCl < 20: contraindicado',
-          requiereConfirmacion: true,
-        },
+          accion: 'suspender',
+          fechaHoraUltimaToma: plazo72.fechaHoraUltimaToma,
+          textoPaciente: plazo72.textoPaciente,
+          reglaAplicada: 'Fondaparinux profiláctico con CrCl < 20: suspender 72 h (plazo más largo del documento fuente)',
+          requiereConfirmacion: false,
+          textoAnestesiologo: 'Aclaramiento < 20 mL/min: contraindicación relativa del fondaparinux; se propone el plazo más largo (72 h). Confirmar el manejo.',
+          puntoValidacion: { tipo: 'posponer', motivo: 'Fondaparinux con CrCl < 20 mL/min (contraindicación relativa): se propone suspender 72 h; confirmar el manejo.' },
+        }, plazo72),
         alerta: {
           gravedad: 'roja',
-          mensaje: 'Fondaparinux con aclaramiento < 20 mL/min: contraindicado.',
+          mensaje: 'Fondaparinux con aclaramiento < 20 mL/min: contraindicación relativa; se propone el plazo más largo (72 h), confirmar el manejo.',
           origen: 'heparinas §8.4',
           soloAnestesiologo: false,
         },
@@ -201,16 +203,15 @@ export function reglaFondaparinux(e: EntradaFondaparinux, ctx: ContextoReglas): 
     }
     const horas = neuroaxialOProfundo(ctx) || altoRiesgoHemo ? 48 : 36;
     const plazo = plazoDesdeHoras(ctx, horas, { permitirAdelanto: true });
-    if (faltaHora(plazo)) return { farmaco: resultadoFaltaHora(base) };
     return {
-      farmaco: {
+      farmaco: aplicarHoraAsumida({
         ...base,
         accion: 'suspender',
         fechaHoraUltimaToma: plazo.fechaHoraUltimaToma,
         textoPaciente: plazo.textoPaciente,
         reglaAplicada: `Fondaparinux profiláctico: ${horas} h antes`,
         requiereConfirmacion: false,
-      },
+      }, plazo),
     };
   }
 
@@ -218,15 +219,14 @@ export function reglaFondaparinux(e: EntradaFondaparinux, ctx: ContextoReglas): 
   const alarga = neuroaxialOProfundo(ctx) || altoRiesgoHemo || (crcl !== null && crcl < 50);
   const horas = alarga ? 72 : 48;
   const plazo = plazoDesdeHoras(ctx, horas, { permitirAdelanto: true });
-  if (faltaHora(plazo)) return { farmaco: resultadoFaltaHora(base) };
   return {
-    farmaco: {
+    farmaco: aplicarHoraAsumida({
       ...base,
       accion: 'suspender',
       fechaHoraUltimaToma: plazo.fechaHoraUltimaToma,
       textoPaciente: plazo.textoPaciente,
       reglaAplicada: `Fondaparinux terapéutico: ${horas} h antes`,
       requiereConfirmacion: false,
-    },
+    }, plazo),
   };
 }

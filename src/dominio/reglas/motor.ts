@@ -11,6 +11,7 @@ import type {
   ContextoReglas,
   DatosIntervencion,
   ResultadoFarmaco,
+  PuntoValidacionFarmaco,
   AccionFarmaco,
   Via,
 } from '../tipos.ts';
@@ -32,6 +33,7 @@ export function construirContexto(
   aclaramiento: number | null,
   indicacion?: string,
   fechaReferencia?: Date,
+  aclaramientoAproximadoFiltrado = false,
 ): ContextoReglas {
   // Técnica efectiva: puede haber varias marcadas. Es neuroaxial si alguna lo es (o
   // "no se sabe" + neuroaxial probable, R3.2.3); bloqueo profundo si alguna lo es.
@@ -65,6 +67,7 @@ export function construirContexto(
   };
   if (indicacion !== undefined) ctx.indicacion = indicacion;
   if (fechaReferencia !== undefined) ctx.fechaReferencia = fechaReferencia;
+  if (aclaramientoAproximadoFiltrado) ctx.aclaramientoAproximadoFiltrado = true;
   return ctx;
 }
 
@@ -77,19 +80,45 @@ export interface PlazoCalculado {
   horas: number;
   fechaHoraUltimaToma: Date;
   textoPaciente: string;
+  /**
+   * Punto 8 (11.1): true si no había hora de toma registrada y se ha asumido la
+   * toma más tardía del día (23:59). La regla añade un punto de validación amarillo
+   * para confirmar la hora real.
+   */
+  horaAsumida: boolean;
 }
 
-/** Señal de que falta la hora de la toma del fármaco (§8.0 v4: nunca se asume). */
+/** Señal de que falta la hora de la toma del fármaco. */
 export const FALTA_HORA_TOMA = 'hora de la toma';
 
-/** Resultado de un cálculo de plazo: o bien la fecha, o bien que falta la hora. */
-export type PlazoResultado = PlazoCalculado | { faltaHora: true };
+/**
+ * Resultado de un cálculo de plazo. Punto 8 (11.1): ya nunca «falta la hora»; si no
+ * hay pauta horaria se asume la toma más tardía (23:59) y se marca `horaAsumida`.
+ */
+export type PlazoResultado = PlazoCalculado;
 
-export function faltaHora(p: PlazoResultado): p is { faltaHora: true } {
-  return 'faltaHora' in p;
+/** Compatibilidad: tras el punto 8 nunca falta la hora (siempre se asume 23:59). */
+export function faltaHora(_p: PlazoResultado): _p is never {
+  return false;
 }
 
-/** ResultadoFarmaco cuando falta la hora de la toma para calcular el plazo. */
+/** Punto de validación amarillo por hora de toma asumida (punto 8, 11.1). */
+export const PUNTO_HORA_ASUMIDA: PuntoValidacionFarmaco = {
+  tipo: 'validar',
+  motivo: 'Falta la hora de la toma: el plazo se ha calculado con la toma más tardía del día (23:59); confirmar la hora real.',
+};
+
+/**
+ * Hora de toma asumida cuando el paciente no la ha registrado (punto 8, 11.1): la
+ * toma más tardía posible del día, de modo que la última dosis permitida nunca
+ * quede dentro del plazo.
+ */
+const PAUTA_HORA_TARDIA = { horas: ['23:59'] };
+
+/**
+ * ResultadoFarmaco cuando falta la hora: tras el punto 8 ya no se usa (el plazo se
+ * calcula con la hora asumida). Se conserva por compatibilidad de llamadas antiguas.
+ */
 export function resultadoFaltaHora(base: {
   idFarmaco: string;
   nombreComercial: string;
@@ -108,8 +137,8 @@ export function resultadoFaltaHora(base: {
 }
 
 /**
- * Plazo en HORAS (§8.0 v4). Requiere la pauta horaria del paciente; si no hay
- * horas registradas, devuelve { faltaHora: true } (nunca asume una hora).
+ * Plazo en HORAS. Punto 8 (11.1): si no hay horas registradas, se asume la toma más
+ * tardía del día (23:59) y se marca `horaAsumida` (la regla deja un punto amarillo).
  * @param permitirAdelanto true solo para anticoagulantes (ACOD/heparinas/fondaparinux).
  */
 export function plazoDesdeHoras(
@@ -117,18 +146,30 @@ export function plazoDesdeHoras(
   horas: number,
   opts: { permitirAdelanto?: boolean } = {},
 ): PlazoResultado {
-  const pauta = ctx.pautaFarmaco;
-  if (!pauta || pauta.horas.length === 0) return { faltaHora: true };
+  const pautaReal = ctx.pautaFarmaco;
+  const horaAsumida = !pautaReal || pautaReal.horas.length === 0;
+  const pauta = horaAsumida ? PAUTA_HORA_TARDIA : pautaReal!;
   const r = ultimaTomaPorHoras(ctx.fechaHoraIntervencion, horas, pauta, opts.permitirAdelanto === true);
-  return { horas, fechaHoraUltimaToma: r.ultimaToma, textoPaciente: textoUltimaToma(r) };
+  return { horas, fechaHoraUltimaToma: r.ultimaToma, textoPaciente: textoUltimaToma(r), horaAsumida };
 }
 
-/** Plazo en DÍAS (§8.0 v4): no tomar los N días previos ni el día de la intervención. */
+/** Plazo en DÍAS: no tomar los N días previos ni el día de la intervención. */
 export function plazoDesdeDias(ctx: ContextoReglas, dias: number): PlazoResultado {
-  const pauta = ctx.pautaFarmaco;
-  if (!pauta || pauta.horas.length === 0) return { faltaHora: true };
+  const pautaReal = ctx.pautaFarmaco;
+  const horaAsumida = !pautaReal || pautaReal.horas.length === 0;
+  const pauta = horaAsumida ? PAUTA_HORA_TARDIA : pautaReal!;
   const ultima = ultimaTomaPorDias(ctx.fechaHoraIntervencion, dias, pauta);
-  return { horas: diasAHoras(dias), fechaHoraUltimaToma: ultima, textoPaciente: textoUltimaTomaDias(ultima) };
+  return { horas: diasAHoras(dias), fechaHoraUltimaToma: ultima, textoPaciente: textoUltimaTomaDias(ultima), horaAsumida };
+}
+
+/**
+ * Si el plazo se calculó con la hora asumida (11.1), añade el punto de validación
+ * amarillo al resultado (sin pisar un punto rojo ya puesto por la regla).
+ */
+export function aplicarHoraAsumida(r: ResultadoFarmaco, plazo: PlazoCalculado): ResultadoFarmaco {
+  if (!plazo.horaAsumida) return r;
+  const punto = puntoMasRestrictivo([r.puntoValidacion, PUNTO_HORA_ASUMIDA]);
+  return punto ? { ...r, puntoValidacion: punto } : r;
 }
 
 /** Texto estándar de "mantener" para fármacos ORALES (§8.0). */
@@ -220,8 +261,9 @@ export function masRestrictiva(resultados: ResultadoFarmaco[]): ResultadoFarmaco
     ajustar: 2,
     mantener: 0,
   };
-  return resultados.reduce((mejor, actual) => {
-    // Requiere confirmación gana siempre.
+  const ganador = resultados.reduce((mejor, actual) => {
+    // Requiere confirmación gana siempre (apenas quedan reglas que lo usen tras el
+    // punto 8; solo el override del catálogo o el fármaco no catalogado).
     if (actual.requiereConfirmacion && !mejor.requiereConfirmacion) return actual;
     if (mejor.requiereConfirmacion && !actual.requiereConfirmacion) return mejor;
     // Mayor rango de acción.
@@ -233,4 +275,30 @@ export function masRestrictiva(resultados: ResultadoFarmaco[]): ResultadoFarmaco
     const tm = mejor.fechaHoraUltimaToma?.getTime() ?? Infinity;
     return ta < tm ? actual : mejor;
   });
+  // El punto de validación más restrictivo de todos los componentes (rojo > amarillo).
+  const punto = puntoMasRestrictivo(resultados.map((r) => r.puntoValidacion));
+  return punto ? { ...ganador, puntoValidacion: punto } : ganador;
+}
+
+/** El punto de validación más restrictivo (🔴 'posponer' gana a 🟡 'validar'). */
+export function puntoMasRestrictivo(
+  puntos: Array<PuntoValidacionFarmaco | undefined>,
+): PuntoValidacionFarmaco | undefined {
+  let mejor: PuntoValidacionFarmaco | undefined;
+  for (const p of puntos) {
+    if (!p) continue;
+    if (!mejor || (p.tipo === 'posponer' && mejor.tipo !== 'posponer')) mejor = p;
+  }
+  return mejor;
+}
+
+/**
+ * Construye un ResultadoFarmaco que PROPONE una pauta y, a la vez, deja un punto de
+ * validación para el anestesiólogo (punto 8). Nunca marca `requiereConfirmacion`.
+ */
+export function conPuntoValidacion(
+  r: ResultadoFarmaco,
+  punto: PuntoValidacionFarmaco,
+): ResultadoFarmaco {
+  return { ...r, requiereConfirmacion: false, puntoValidacion: punto };
 }

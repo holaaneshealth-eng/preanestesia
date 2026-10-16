@@ -69,20 +69,23 @@ export function reglaAntiangiogenico(e: EntradaAntiangiogenico): ResultadoAntian
 
   const reciente = e.semanasDesdeUltimaDosis === undefined || e.semanasDesdeUltimaDosis < 8;
   if (reciente) {
+    // Punto 8 (8.1): se propone recomendar diferir hasta ≥ 6-8 semanas; si falta la
+    // fecha, se asume reciente (supuesto más prudente). El paciente mantiene su
+    // tratamiento hasta que se le indique. Punto ROJO.
+    const sinFecha = e.semanasDesdeUltimaDosis === undefined;
     return {
       farmaco: {
         ...base,
-        accion: 'consultar',
+        accion: 'mantener',
         textoPaciente:
-          'Sobre este tratamiento, el anestesiólogo le indicará qué hacer. No lo cambie por su cuenta.',
-        reglaAplicada: 'Antiangiogénico sistémico: última dosis < 6-8 semanas → diferir, requiere confirmación',
-        requiereConfirmacion: true,
-        ...(e.semanasDesdeUltimaDosis === undefined
-          ? { datoQueFalta: 'fecha de la última dosis del antiangiogénico' }
-          : {}),
+          'Siga con su tratamiento como siempre. El anestesiólogo valorará la fecha de la operación y le avisará si hay que retrasarla.',
+        reglaAplicada: `Antiangiogénico sistémico: última dosis < 6-8 semanas${sinFecha ? ' (fecha desconocida: se asume reciente)' : ''} → valorar diferir la cirugía`,
+        requiereConfirmacion: false,
+        textoAnestesiologo: `Antiangiogénico sistémico reciente${sinFecha ? ' (no consta la fecha de la última dosis: se asume reciente)' : ''}: valorar diferir la cirugía programada ≥ 6-8 semanas desde la última dosis.`,
+        puntoValidacion: { tipo: 'posponer', motivo: 'Antiangiogénico sistémico reciente: valorar diferir la cirugía al menos 6-8 semanas desde la última dosis.' },
       },
       alerta: {
-        gravedad: 'amarilla',
+        gravedad: 'roja',
         mensaje: 'Antiangiogénico sistémico reciente: retrasar la cirugía programada al menos 6-8 semanas desde la última dosis.',
         origen: 'oncológicos §8.9',
         soloAnestesiologo: false,

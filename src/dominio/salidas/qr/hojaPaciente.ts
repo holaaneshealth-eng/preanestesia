@@ -41,10 +41,16 @@ export interface FarmacoQr {
   ad: boolean;
   /** Es anticoagulante. */
   ac: boolean;
-  /** Requiere confirmación del anestesiólogo. */
+  /** Requiere confirmación del anestesiólogo (apenas se usa tras el punto 8). */
   rc: boolean;
   /** Nombre del anestesiólogo que ha confirmado (si `rc`); ausente = no confirmado. */
   cf?: string;
+  /**
+   * Punto 8: la regla deja un punto de validación ROJO. La hoja del paciente añade,
+   * bajo la instrucción del fármaco, la línea «El anestesiólogo revisará esta
+   * indicación y le llamará si hay algún cambio». Solo viaja la clave (no el texto).
+   */
+  rv?: boolean;
   /** Texto fijo del paciente para fármacos sin plazo (mantener/consultar). */
   tx?: string;
   /** Variante de «mantener» (para localizar sin texto libre): la vía de administración. */
@@ -92,6 +98,8 @@ export interface InstruccionPacienteEstructurada {
   nombre: string;
   plazoNoCumplible: boolean;
   e: InstruccionEstructurada;
+  /** Punto 8: añadir la línea de revisión por el anestesiólogo (punto rojo). */
+  revision?: boolean;
 }
 
 /** Una línea de ayuno en el QR: código, horas antes y (opcional) cota del rango. */
@@ -190,6 +198,8 @@ export interface InstruccionPaciente {
   texto: string;
   /** true si con la fecha dada el plazo ya no se puede cumplir (§8.16e). */
   plazoNoCumplible: boolean;
+  /** Punto 8: añadir la línea de revisión por el anestesiólogo (punto rojo). */
+  revision?: boolean;
 }
 
 // ————————————————————— textos de margen (sin fecha, §8.16b) —————————————————————
@@ -264,10 +274,11 @@ export function recalcularHoja(
       return { nombre: f.n, texto: fraseNoConfirmado(f.n), plazoNoCumplible: false };
     }
     // Sin fecha: instrucción como margen, sin adelantos (§8.16b).
-    if (iv === null) {
-      return { nombre: f.n, texto: textoMargenSinFecha(f), plazoNoCumplible: false };
-    }
-    return recalcularFarmaco(f, iv, contenido.tel, ahora);
+    const base = iv === null
+      ? { nombre: f.n, texto: textoMargenSinFecha(f), plazoNoCumplible: false }
+      : recalcularFarmaco(f, iv, contenido.tel, ahora);
+    // Punto 8: línea de revisión por el anestesiólogo si el fármaco tiene punto rojo.
+    return f.rv ? { ...base, revision: true } : base;
   });
 }
 
@@ -282,7 +293,10 @@ export function recalcularHojaEstructurada(
 ): InstruccionPacienteEstructurada[] {
   const fiMs = fechaIntervencion ? fechaIntervencion.getTime() : contenido.fi;
   const iv = fiMs !== null ? new Date(fiMs) : null;
-  return contenido.far.map((f) => instruccionEstructurada(f, iv, ahora));
+  return contenido.far.map((f) => {
+    const ins = instruccionEstructurada(f, iv, ahora);
+    return f.rv ? { ...ins, revision: true } : ins;
+  });
 }
 
 function mantenerODeTexto(f: FarmacoQr): InstruccionEstructurada {

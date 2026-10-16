@@ -60,9 +60,12 @@ describe('Heparinas y fondaparinux (§8.4)', () => {
     expect(H(r.fechaHoraUltimaToma)).toBe(24);
     expect(r.textoAnestesiologo).toContain('anti-Xa');
   });
-  it('HBPM indeterminada → requiere confirmación', () => {
+  it('HBPM indeterminada → se asume terapéutica (24 h) + validación (punto 8)', () => {
     const r = reglaHbpm({ idFarmaco: 'enoxaparina', nombreComercial: 'Clexane', principio: 'enoxaparina', tipo: 'indeterminada' }, ctx());
-    expect(r.requiereConfirmacion).toBeTrue();
+    expect(r.accion).toBe('suspender');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(H(r.fechaHoraUltimaToma)).toBe(24);
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
   it('heparina sódica IV → 6 h (uso hospitalario)', () => {
     const r = reglaHeparinaSodica('heparina_sodica', 'Heparina', ctx());
@@ -74,9 +77,12 @@ describe('Heparinas y fondaparinux (§8.4)', () => {
     // 48 h antes de las 08:00 cae a las 08:00 → pauta a las 08:00.
     expect(H(reglaFondaparinux({ idFarmaco: 'f', nombreComercial: 'Arixtra', dosis: 'profilactico' }, ctx({ neuroaxial: true, pautaFarmaco: { horas: ['08:00'] } })).farmaco.fechaHoraUltimaToma)).toBe(48);
   });
-  it('fondaparinux profiláctico CrCl < 20 → contraindicado, alerta roja', () => {
-    const r = reglaFondaparinux({ idFarmaco: 'f', nombreComercial: 'Arixtra', dosis: 'profilactico' }, ctx({ aclaramiento: 15 }));
-    expect(r.farmaco.requiereConfirmacion).toBeTrue();
+  it('fondaparinux profiláctico CrCl < 20 → suspender 72 h (plazo más largo) + punto rojo + alerta roja (punto 8)', () => {
+    const r = reglaFondaparinux({ idFarmaco: 'f', nombreComercial: 'Arixtra', dosis: 'profilactico' }, ctx({ aclaramiento: 15, pautaFarmaco: { horas: ['08:00'] } }));
+    expect(r.farmaco.accion).toBe('suspender');
+    expect(r.farmaco.requiereConfirmacion).toBeFalse();
+    expect(H(r.farmaco.fechaHoraUltimaToma)).toBe(72);
+    expect(r.farmaco.puntoValidacion?.tipo).toBe('posponer');
     expect(r.alerta?.gravedad).toBe('roja');
   });
   it('fondaparinux terapéutico → 48 h; 72 h con CrCl < 50 (dosis a las 08:00)', () => {
@@ -86,9 +92,11 @@ describe('Heparinas y fondaparinux (§8.4)', () => {
 });
 
 describe('Psicofármacos IMAO (§8.7)', () => {
-  it('IMAO irreversible → requiere confirmación + nota anestesia segura', () => {
+  it('IMAO irreversible → mantener + anestesia segura + validación (punto 8)', () => {
     const r = reglaImaoIrreversible({ idFarmaco: 'tranilcipromina', nombreComercial: 'Parnate', principio: 'tranilcipromina' });
-    expect(r.requiereConfirmacion).toBeTrue();
+    expect(r.accion).toBe('mantener');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
     expect(r.textoAnestesiologo).toContain('meperidina');
   });
   it('moclobemida → suspender 24 h + nota', () => {
@@ -108,13 +116,18 @@ describe('Inmunosupresores y reumatología (§8.8)', () => {
     const r = reglaInmunosupresorClasico({ idFarmaco: 'tacrolimus', nombreComercial: 'Prograf', principio: 'tacrolimus', indicacion: 'trasplante' });
     expect(r.accion).toBe('mantener');
   });
-  it('azatioprina por autoinmune → requiere confirmación', () => {
+  it('azatioprina por autoinmune → mantener + validación (punto 8)', () => {
     const r = reglaInmunosupresorClasico({ idFarmaco: 'azatioprina', nombreComercial: 'Imurel', principio: 'azatioprina', indicacion: 'autoinmune' });
-    expect(r.requiereConfirmacion).toBeTrue();
+    expect(r.accion).toBe('mantener');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
-  it('metotrexato ≤ 20 mg → mantener; > 20 mg → confirmación', () => {
+  it('metotrexato ≤ 20 mg → mantener; > 20 mg → mantener + validación (punto 8)', () => {
     expect(reglaMetotrexato({ idFarmaco: 'mtx', nombreComercial: 'Metoject', dosisSemanalMg: 15 }).accion).toBe('mantener');
-    expect(reglaMetotrexato({ idFarmaco: 'mtx', nombreComercial: 'Metoject', dosisSemanalMg: 25 }).requiereConfirmacion).toBeTrue();
+    const alta = reglaMetotrexato({ idFarmaco: 'mtx', nombreComercial: 'Metoject', dosisSemanalMg: 25 });
+    expect(alta.accion).toBe('mantener');
+    expect(alta.requiereConfirmacion).toBeFalse();
+    expect(alta.puntoValidacion?.tipo).toBe('validar');
   });
   it('leflunomida → mantener', () => {
     expect(reglaFameMantener({ idFarmaco: 'leflunomida', nombreComercial: 'Arava', principio: 'leflunomida' }).accion).toBe('mantener');
@@ -123,10 +136,12 @@ describe('Inmunosupresores y reumatología (§8.8)', () => {
     const r = reglaJak({ idFarmaco: 'tofacitinib', nombreComercial: 'Xeljanz', principio: 'tofacitinib' }, ctx());
     expect(D(r.fechaHoraUltimaToma)).toBe(4);
   });
-  it('biológico → requiere confirmación, pide fecha de última dosis', () => {
+  it('biológico sin fecha → programar al final del ciclo + validación; nota de confirmar fecha (punto 8)', () => {
     const r = reglaBiologico({ idFarmaco: 'adalimumab', nombreComercial: 'Humira', principio: 'adalimumab' });
-    expect(r.requiereConfirmacion).toBeTrue();
-    expect(r.datoQueFalta).toContain('última dosis');
+    expect(r.accion).toBe('mantener');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
+    expect(r.textoAnestesiologo).toContain('última dosis');
   });
 });
 
@@ -134,9 +149,11 @@ describe('Oncológicos (§8.9)', () => {
   it('imatinib → continuar hasta la cirugía', () => {
     expect(reglaTirosinaCinasa({ idFarmaco: 'imatinib', nombreComercial: 'Glivec', principio: 'imatinib' }).accion).toBe('mantener');
   });
-  it('bevacizumab < 8 semanas → diferir, confirmación + alerta', () => {
+  it('bevacizumab < 8 semanas → valorar diferir + punto rojo + alerta roja (punto 8)', () => {
     const r = reglaAntiangiogenico({ idFarmaco: 'bevacizumab', nombreComercial: 'Avastin', principio: 'bevacizumab', semanasDesdeUltimaDosis: 4 });
-    expect(r.farmaco.requiereConfirmacion).toBeTrue();
+    expect(r.farmaco.requiereConfirmacion).toBeFalse();
+    expect(r.farmaco.puntoValidacion?.tipo).toBe('posponer');
+    expect(r.alerta?.gravedad).toBe('roja');
     expect(r.alerta?.mensaje).toContain('6-8 semanas');
   });
   it('bevacizumab ≥ 8 semanas → mantener', () => {
@@ -155,10 +172,11 @@ describe('Otros (§8.11)', () => {
     const r = reglaFitoterapia({ idFarmaco: 'ginkgo', nombreComercial: 'Ginkgo', principio: 'ginkgo' }, ctx());
     expect(D(r.fechaHoraUltimaToma)).toBe(15);
   });
-  it('anticonceptivo con riesgo trombótico alto → requiere confirmación; texto de anticonceptivo en hoja', () => {
+  it('anticonceptivo con riesgo trombótico alto → mantener + validación; nota 4-6 semanas (punto 8)', () => {
     const r = reglaAnticonceptivoThs({ idFarmaco: 'aco', nombreComercial: 'ACO', principio: 'etinilestradiol', via: 'oral' }, ctx({ riesgoTromboticoAlto: true }));
-    expect(r.requiereConfirmacion).toBeTrue();
-    expect(r.textoPaciente).toContain('anticonceptivo');
+    expect(r.accion).toBe('mantener');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
     expect(r.textoAnestesiologo).toContain('4-6 semanas');
   });
   it('anticonceptivo sin riesgo trombótico alto → mantener', () => {
@@ -211,15 +229,18 @@ describe('Otros antiagregantes (§8.3)', () => {
   it('GP IIb/IIIa (cangrelor) → 1 h; 3 h neuroaxial; siempre confirmación', () => {
     const r = reglaGpIibIiia('c', 'Kengrexal', 'cangrelor', ctx());
     expect(H(r.fechaHoraUltimaToma)).toBe(1);
-    expect(r.requiereConfirmacion).toBeTrue();
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
     expect(H(reglaGpIibIiia('c', 'Kengrexal', 'cangrelor', ctx({ neuroaxial: true })).fechaHoraUltimaToma)).toBe(3);
   });
 });
 
 describe('AAS > 200 mg con indicación cardiovascular (§8.3)', () => {
-  it('debe suspenderse (espacio cerrado) con indicación cardiovascular: confirmación + sugerencia de 100 mg', () => {
+  it('debe suspenderse (espacio cerrado) con indicación cardiovascular: mantener 100 mg + validación (punto 8)', () => {
     const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 300, indicacionCardiovascular: true }, ctx({ espacioCerrado: true }));
-    expect(r.requiereConfirmacion).toBeTrue();
+    expect(r.accion).toBe('ajustar');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
     expect(r.textoAnestesiologo).toContain('100 mg');
   });
 });

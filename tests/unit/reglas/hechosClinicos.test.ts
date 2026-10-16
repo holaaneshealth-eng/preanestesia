@@ -51,16 +51,19 @@ describe('Hechos clínicos · derivación desde módulos', () => {
     expect(hechos.stent?.traSca).toBeTrue();
     expect(hechos.tieneAas).toBeTrue();
     const r = evaluarFarmacoUi(farmaco('p2y12_clopidogrel', { nombreComercial: 'Plavix', principiosActivos: ['clopidogrel'] }), ctx(90), hechos);
-    expect(r.requiereConfirmacion).toBeTrue();
+    // Punto 8 (3.4): portador de stent → mantener doble antiagregación + punto rojo.
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('posponer');
   });
 
-  it('bug 2: Plavix sin Adiro (monoterapia) → sugerencia de pasar a AAS', () => {
+  it('bug 2: Plavix sin Adiro (monoterapia) → sugerencia de pasar a AAS + validación (punto 8)', () => {
     const hechos = derivarHechosClinicos(entrada({
       medicacion: [{ principiosActivos: ['clopidogrel'], idRegla: 'p2y12_clopidogrel' }],
     }));
     expect(hechos.tieneAas).toBeFalse();
     const r = evaluarFarmacoUi(farmaco('p2y12_clopidogrel', { nombreComercial: 'Plavix', principiosActivos: ['clopidogrel'] }), ctx(90), hechos);
-    expect(r.requiereConfirmacion).toBeTrue();
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
     expect(r.textoAnestesiologo ?? '').toContain('AAS 100 mg/día');
   });
 
@@ -76,8 +79,10 @@ describe('Hechos clínicos · derivación desde módulos', () => {
     const hechos = derivarHechosClinicos(entrada({ enfermedades: new Set(['fibrilacion_auricular']) }));
     expect(hechos.aclaramiento).toBe(null);
     const r = evaluarFarmacoUi(farmaco('acod_antixa', { nombreComercial: 'Eliquis', principiosActivos: ['apixaban'], horas: ['09:00', '21:00'] }), ctx(hechos.aclaramiento, { neuroaxial: true }), hechos);
-    expect(r.requiereConfirmacion).toBeTrue();
-    expect(r.datoQueFalta ?? '').toContain('aclaramiento');
+    // Punto 8 (1.1): sin aclaramiento se propone el tramo más prudente + punto amarillo.
+    expect(r.accion).toBe('suspender');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
 
   it('bug 3: FA + raquídea + Eliquis CON creatinina del módulo renal → calcula el plazo (sin bloqueo)', () => {
@@ -99,7 +104,9 @@ describe('Hechos clínicos · derivación desde módulos', () => {
     expect(hechos.valvulaMecanica).toBeTrue();
     expect(hechos.altoRiesgoTrombotico).toBeTrue();
     const r = evaluarFarmacoUi(farmaco('avk_warfarina', { nombreComercial: 'Aldocumar', principiosActivos: ['warfarina'], horas: ['18:00'] }), ctx(null), hechos);
-    expect(r.requiereConfirmacion).toBeTrue();
+    // Punto 8 (2.1/2.2): se propone la pauta y queda un punto rojo (alto riesgo trombótico/válvula).
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('posponer');
   });
 
   it('IC con FEVI 30 % → IECA se mantiene', () => {
@@ -115,8 +122,11 @@ describe('Hechos clínicos · derivación desde módulos', () => {
   it('espacio cerrado (neurocirugía intracraneal/medular) → AAS requiere confirmación', () => {
     const hechos = derivarHechosClinicos(entrada({ espacioCerrado: true }));
     expect(hechos.neurocirugiaIntracranealOMedular).toBeTrue();
-    const r = evaluarFarmacoUi(farmaco('aas', { nombreComercial: 'Adiro', principiosActivos: ['acido_acetilsalicilico'], dosisMg: 100 }), ctx(90, { espacioCerrado: true }), hechos);
-    expect(r.requiereConfirmacion).toBeTrue();
+    const r = evaluarFarmacoUi(farmaco('aas', { nombreComercial: 'Adiro', principiosActivos: ['acido_acetilsalicilico'], dosisMg: 100, horas: ['09:00'] }), ctx(90, { espacioCerrado: true }), hechos);
+    // Punto 8 (3.1): se propone suspender 5 días + punto amarillo.
+    expect(r.accion).toBe('suspender');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
 
   it('contraste yodado "no se sabe" → metformina con nota al anestesiólogo', () => {

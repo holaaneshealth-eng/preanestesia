@@ -598,6 +598,7 @@ body {
 .validacion-controles { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
 .validacion-resuelta { margin: 4px 0 0; color: #2c7a3f; font-weight: 600; }
 .revision-pendiente { font-weight: 600; }
+.med-revision { display: block; margin-top: 4px; color: #c0392b; font-weight: 600; }
 
 /* Impresión / PDF de la hoja del paciente */
 @media print {

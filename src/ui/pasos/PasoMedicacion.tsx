@@ -590,8 +590,8 @@ function AclaramientoFicha({
       )}
       {tipo === 'no_disponible' && (
         <p className="aviso aviso-atencion" role="note">
-          Sin aclaramiento, los anticoagulantes dependientes del riñón quedan «pendientes de confirmar»
-          por el anestesiólogo.
+          Sin aclaramiento, los anticoagulantes dependientes del riñón se calculan con el supuesto más
+          prudente (el plazo más largo) y quedan como punto de validación para el anestesiólogo.
         </p>
       )}
     </div>

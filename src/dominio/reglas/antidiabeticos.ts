@@ -6,7 +6,7 @@
 import type { ContextoReglas, ResultadoFarmaco } from '../tipos.ts';
 import { startOfDay, endOfDay } from '../fechas/plazos.ts';
 import { fechaLarga, horaReloj } from '../fechas/ultimaToma.ts';
-import { plazoDesdeDias, faltaHora, resultadoFaltaHora } from './motor.ts';
+import { plazoDesdeDias, aplicarHoraAsumida } from './motor.ts';
 
 const FUENTE = 'docs/documento_fuente.md §8.5 (protocolo de preanestesia en diabéticos; CPOC)';
 
@@ -131,16 +131,19 @@ export interface EntradaInsulinaGlp1Fija {
 }
 
 export function reglaInsulinaGlp1Fija(e: EntradaInsulinaGlp1Fija): ResultadoFarmaco {
+  // Punto 8 (4.1): se propone tratar el componente basal como insulina basal (reducción
+  // del 20 % la noche previa y la mañana, CPOC) sin omitir el conjunto; punto amarillo.
   return {
     idFarmaco: e.idFarmaco,
     nombreComercial: e.nombreComercial,
     principiosActivos: e.principiosActivos,
-    accion: 'consultar',
-    textoPaciente: `Sobre ${e.nombreComercial}, el anestesiólogo le indicará qué hacer. No lo cambie por su cuenta.`,
-    reglaAplicada: 'Combinación fija insulina basal + GLP-1: requiere confirmación (omitir el GLP-1 dejaría sin insulina basal)',
+    accion: 'ajustar',
+    textoPaciente: `Póngase ${e.nombreComercial} al 80 % de su dosis habitual la noche anterior y la mañana de la intervención. No deje de ponerse la insulina.`,
+    reglaAplicada: 'Combinación fija insulina basal + GLP-1: tratar el componente basal como insulina basal (reducción 20 % noche previa y mañana, CPOC)',
     fuente: FUENTE,
-    requiereConfirmacion: true,
-    textoAnestesiologo: 'Combinación fija insulina basal + GLP-1: omitir el GLP-1 dejaría sin insulina basal.',
+    requiereConfirmacion: false,
+    textoAnestesiologo: 'Combinación fija insulina basal + GLP-1: se trata el componente basal como insulina basal (reducción 20 %); confirmar el manejo de la insulina.',
+    puntoValidacion: { tipo: 'validar', motivo: 'Combinación fija insulina basal + GLP-1: se propone reducir la basal al 80 %; confirmar el manejo de la insulina.' },
   };
 }
 
@@ -155,9 +158,7 @@ export interface EntradaSglt2 {
 export function reglaSglt2(e: EntradaSglt2, ctx: ContextoReglas): ResultadoFarmaco {
   const dias = e.principio === 'ertugliflozina' ? 4 : 3;
   const plazo = plazoDesdeDias(ctx, dias); // no tomar N días previos ni el día de la IQ
-  const base = { idFarmaco: e.idFarmaco, nombreComercial: e.nombreComercial, principiosActivos: [e.principio], fuente: FUENTE };
-  if (faltaHora(plazo)) return resultadoFaltaHora(base);
-  return {
+  return aplicarHoraAsumida({
     idFarmaco: e.idFarmaco,
     nombreComercial: e.nombreComercial,
     principiosActivos: [e.principio],
@@ -167,7 +168,7 @@ export function reglaSglt2(e: EntradaSglt2, ctx: ContextoReglas): ResultadoFarma
     reglaAplicada: `SGLT2 (${e.principio}): suspender ${dias} días`,
     fuente: FUENTE,
     requiereConfirmacion: false,
-  };
+  }, plazo);
 }
 
 // ————————————— GLP-1 semanal (Decisión 8) —————————————
@@ -243,9 +244,7 @@ export interface EntradaGlp1Diario {
 export function reglaGlp1Diario(e: EntradaGlp1Diario, ctx: ContextoReglas): ResultadoFarmaco {
   // Omitir los 3 días previos y el día de la intervención → última dosis el día 4 previo.
   const plazo = plazoDesdeDias(ctx, 3);
-  const base = { idFarmaco: e.idFarmaco, nombreComercial: e.nombreComercial, principiosActivos: [e.principio], fuente: FUENTE };
-  if (faltaHora(plazo)) return resultadoFaltaHora(base);
-  return {
+  return aplicarHoraAsumida({
     idFarmaco: e.idFarmaco,
     nombreComercial: e.nombreComercial,
     principiosActivos: [e.principio],
@@ -255,7 +254,7 @@ export function reglaGlp1Diario(e: EntradaGlp1Diario, ctx: ContextoReglas): Resu
     reglaAplicada: 'GLP-1 diario: omitir 3 días previos + día de la IQ (última dosis el día 4 previo)',
     fuente: FUENTE,
     requiereConfirmacion: false,
-  };
+  }, plazo);
 }
 
 // ————————————— Bomba de insulina (Decisión 6) —————————————

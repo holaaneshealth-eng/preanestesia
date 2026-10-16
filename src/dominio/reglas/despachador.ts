@@ -251,7 +251,7 @@ function evaluarRegla(d: DatosFarmacoUi, ctxPauta: ContextoReglas, clin: DatosCl
     case 'diuretico':
       return reglaDiuretico({ idFarmaco: id, nombreComercial: nc, principio: d.principiosActivos[0] ?? 'diuretico' }, ctxPauta);
     case 'sacubitrilo_valsartan':
-      return reglaSacubitriloValsartan({ idFarmaco: id, nombreComercial: nc });
+      return reglaSacubitriloValsartan({ idFarmaco: id, nombreComercial: nc }, ctxPauta);
 
     case 'litio':
       return reglaLitio({ idFarmaco: id, nombreComercial: nc }, ctxPauta);

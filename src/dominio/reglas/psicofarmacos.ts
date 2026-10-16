@@ -4,7 +4,7 @@
  * alto 72 h). IMAO y demás se añadirán con sus notas de anestesia segura.
  */
 import type { ContextoReglas, ResultadoFarmaco, RiesgoCardiovascular } from '../tipos.ts';
-import { plazoDesdeHoras, faltaHora, resultadoFaltaHora } from './motor.ts';
+import { plazoDesdeHoras, aplicarHoraAsumida } from './motor.ts';
 
 const FUENTE = 'docs/documento_fuente.md §8.7 (protocolo del servicio)';
 
@@ -27,30 +27,32 @@ export interface EntradaImao {
   principio: string;
 }
 
-/** IMAO irreversibles (tranilcipromina, fenelzina, isocarboxazida): retirar 10-14 días, requiere confirmación. */
+/**
+ * IMAO irreversibles (tranilcipromina, fenelzina, isocarboxazida). Punto 8 (10.1):
+ * se propone MANTENER por defecto con la nota de «anestesia segura con IMAO» como
+ * pauta operativa, y se recomienda coordinar con psiquiatría la posible retirada
+ * 10-14 días; punto amarillo.
+ */
 export function reglaImaoIrreversible(e: EntradaImao): ResultadoFarmaco {
   return {
     idFarmaco: e.idFarmaco,
     nombreComercial: e.nombreComercial,
     principiosActivos: [e.principio],
-    accion: 'consultar',
-    // Tras confirmar, la hoja muestra esta pauta; antes, textoHojaPaciente impone
-    // la frase única. El matiz "de acuerdo con su psiquiatra" va a las notas.
+    accion: 'mantener',
     textoPaciente:
-      'Deberá dejar de tomarlo unos 10-14 días antes de la intervención. El anestesiólogo se lo confirmará.',
-    reglaAplicada: 'IMAO irreversible: retirar idealmente 10-14 días antes, de acuerdo con su psiquiatra',
+      'Siga tomándolo como siempre, salvo que su psiquiatra o el anestesiólogo le indiquen retirarlo antes de la intervención.',
+    reglaAplicada: 'IMAO irreversible: mantener por defecto con anestesia segura con IMAO; valorar retirada 10-14 días con psiquiatría',
     fuente: 'docs/documento_fuente.md §8.7',
-    requiereConfirmacion: true,
-    textoAnestesiologo: `Coordinar la retirada (10-14 días) con su psiquiatra. ${NOTA_ANESTESIA_SEGURA_IMAO}`,
+    requiereConfirmacion: false,
+    textoAnestesiologo: `Mantener con anestesia segura con IMAO, o coordinar la retirada (10-14 días) con su psiquiatra. ${NOTA_ANESTESIA_SEGURA_IMAO}`,
+    puntoValidacion: { tipo: 'validar', motivo: 'IMAO irreversible: confirmar retirada 10-14 días con psiquiatría o anestesia segura con IMAO.' },
   };
 }
 
 /** Moclobemida (IMAO-A reversible): suspender 24 h + misma nota. */
 export function reglaMoclobemida(e: EntradaImao, ctx: ContextoReglas): ResultadoFarmaco {
   const plazo = plazoDesdeHoras(ctx, 24);
-  const base = { idFarmaco: e.idFarmaco, nombreComercial: e.nombreComercial, principiosActivos: ['moclobemida'], fuente: 'docs/documento_fuente.md §8.7' };
-  if (faltaHora(plazo)) return resultadoFaltaHora(base);
-  return {
+  return aplicarHoraAsumida({
     idFarmaco: e.idFarmaco,
     nombreComercial: e.nombreComercial,
     principiosActivos: ['moclobemida'],
@@ -61,7 +63,7 @@ export function reglaMoclobemida(e: EntradaImao, ctx: ContextoReglas): Resultado
     fuente: 'docs/documento_fuente.md §8.7',
     requiereConfirmacion: false,
     textoAnestesiologo: NOTA_ANESTESIA_SEGURA_IMAO,
-  };
+  }, plazo);
 }
 
 /** IMAO-B antiparkinsonianos (rasagilina, selegilina, safinamida): mantener + nota. */
@@ -87,9 +89,7 @@ export interface EntradaLitio {
 export function reglaLitio(e: EntradaLitio, ctx: ContextoReglas): ResultadoFarmaco {
   const horas = HORAS_LITIO[ctx.riesgoCardiovascular];
   const plazo = plazoDesdeHoras(ctx, horas);
-  const base = { idFarmaco: e.idFarmaco, nombreComercial: e.nombreComercial, principiosActivos: ['litio'], fuente: FUENTE };
-  if (faltaHora(plazo)) return resultadoFaltaHora(base);
-  return {
+  return aplicarHoraAsumida({
     idFarmaco: e.idFarmaco,
     nombreComercial: e.nombreComercial,
     principiosActivos: ['litio'],
@@ -100,5 +100,5 @@ export function reglaLitio(e: EntradaLitio, ctx: ContextoReglas): ResultadoFarma
     fuente: FUENTE,
     requiereConfirmacion: false,
     textoAnestesiologo: 'Controlar litemia y función renal; reanudar con precaución.',
-  };
+  }, plazo);
 }

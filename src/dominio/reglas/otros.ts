@@ -10,21 +10,25 @@ import { esViaOral } from '../tipos.ts';
 import { TEXTO_MANTENER } from './motor.ts';
 // (textoMantener y ViaAdministracion se importan más abajo junto a plazoDesdeDias)
 import { plazoNoAlcanzable } from '../fechas/plazos.ts';
-import { plazoDesdeDias, faltaHora, resultadoFaltaHora, textoMantener, type ViaAdministracion } from './motor.ts';
+import { plazoDesdeDias, aplicarHoraAsumida, textoMantener, type ViaAdministracion } from './motor.ts';
 import { avisoSugammadex } from './sugammadex.ts';
 
 const FUENTE = 'docs/documento_fuente.md §8.0';
 
 export function reglaNoCatalogado(nombre: string): ResultadoFarmaco {
+  // Punto 8 (9.1): se propone MANTENER por defecto (el programa no le aplica reglas) y
+  // queda un punto amarillo para que el anestesiólogo revise el manejo.
   return {
     idFarmaco: `no_catalogado:${nombre}`,
     nombreComercial: nombre,
     principiosActivos: [],
     accion: 'mantener',
-    textoPaciente: 'Siga tomándolo como siempre y consúltelo con el anestesiólogo.',
-    reglaAplicada: 'Fármaco no catalogado: mantener y consultar con el anestesiólogo',
+    textoPaciente: 'Siga tomándolo como siempre, salvo que el anestesiólogo le indique otra cosa.',
+    reglaAplicada: 'Fármaco no catalogado: mantener por defecto (el programa no le aplica reglas)',
     fuente: FUENTE,
-    requiereConfirmacion: true,
+    requiereConfirmacion: false,
+    textoAnestesiologo: 'Fármaco no incluido en el catálogo: el programa no le aplica reglas; revisar el manejo.',
+    puntoValidacion: { tipo: 'validar', motivo: 'Fármaco no catalogado: se propone mantener; revisar el manejo.' },
   };
 }
 
@@ -58,9 +62,7 @@ export interface EntradaFitoterapia {
 /** Fitoterapia/suplementos con efecto sobre coagulación/metabolismo: suspender 14 días (mínimo 7). */
 export function reglaFitoterapia(e: EntradaFitoterapia, ctx: ContextoReglas): ResultadoFarmaco {
   const plazo = plazoDesdeDias(ctx, 14); // no tomar 14 días previos ni el día de la IQ
-  const base = { idFarmaco: e.idFarmaco, nombreComercial: e.nombreComercial, principiosActivos: [e.principio], fuente: 'docs/documento_fuente.md §8.11' };
-  if (faltaHora(plazo)) return resultadoFaltaHora(base);
-  return {
+  return aplicarHoraAsumida({
     idFarmaco: e.idFarmaco,
     nombreComercial: e.nombreComercial,
     principiosActivos: [e.principio],
@@ -70,7 +72,7 @@ export function reglaFitoterapia(e: EntradaFitoterapia, ctx: ContextoReglas): Re
     reglaAplicada: 'Fitoterapia/suplemento con efecto sobre coagulación: suspender 14 días (mínimo 7)',
     fuente: 'docs/documento_fuente.md §8.11',
     requiereConfirmacion: false,
-  };
+  }, plazo);
 }
 
 // ————————————— Anticonceptivos / THS (§8.11, Decisión 4) —————————————
@@ -110,14 +112,17 @@ export function reglaAnticonceptivoThs(e: EntradaAnticonceptivoThs, ctx: Context
     fuente: 'docs/documento_fuente.md §8.11',
   };
   if (ctx.riesgoTromboticoAlto) {
+    // Punto 8 (9.2): se propone MANTENER (no se suspende de forma rutinaria por una
+    // cirugía) con nota de valorar suspensión 4-6 semanas solo en cirugía de muy alto
+    // riesgo trombótico; punto amarillo.
     return {
       ...base,
-      accion: 'consultar',
-      textoPaciente:
-        'Sobre su anticonceptivo, el anestesiólogo le llamará para indicarle qué hacer. No lo cambie por su cuenta.',
-      reglaAplicada: 'Anticonceptivo/THS con riesgo trombótico alto: requiere confirmación',
-      requiereConfirmacion: true,
-      textoAnestesiologo: `Valorar suspender 4-6 semanas antes y método anticonceptivo alternativo. ${notaSugammadex(via)}`,
+      accion: 'mantener',
+      textoPaciente: textoMantener(via),
+      reglaAplicada: 'Anticonceptivo/THS con riesgo trombótico alto: mantener por defecto (no se suspende de rutina por la cirugía)',
+      requiereConfirmacion: false,
+      textoAnestesiologo: `Valorar suspender 4-6 semanas antes y método alternativo solo en cirugía de muy alto riesgo trombótico con profilaxis. ${notaSugammadex(via)}`,
+      puntoValidacion: { tipo: 'validar', motivo: 'Anticonceptivo/THS con riesgo trombótico alto: se propone mantener; confirmar si procede suspender 4-6 semanas.' },
     };
   }
   return {
@@ -194,17 +199,21 @@ export function aplicarPlazoNoAlcanzable(
   if (!plazoNoAlcanzable(r.fechaHoraUltimaToma, ahora)) {
     return { resultado: r };
   }
+  // Punto 8 (9.3): nunca se deja sin pauta. Se da la instrucción prudente «No tome
+  // más dosis desde hoy» (nunca «tómela lo antes posible») y queda un punto ROJO
+  // para que el anestesiólogo valore retrasar la cirugía.
   const resultado: ResultadoFarmaco = {
     ...r,
-    accion: 'consultar',
-    requiereConfirmacion: true,
-    reglaAplicada: `${r.reglaAplicada} — plazo no alcanzable`,
+    accion: 'suspender',
+    requiereConfirmacion: false,
+    reglaAplicada: `${r.reglaAplicada} — plazo no alcanzable (§8.16)`,
     textoPaciente:
-      'Sobre este medicamento, el anestesiólogo le llamará para indicarle qué hacer. No lo cambie por su cuenta.',
+      'No tome más dosis de este medicamento desde hoy. El anestesiólogo revisará su caso y le avisará si hay algún cambio.',
+    puntoValidacion: { tipo: 'posponer', motivo: `${r.nombreComercial}: ya no se puede cumplir el plazo de suspensión; valorar retrasar la cirugía.` },
   };
   const alerta: Alerta = {
     gravedad: 'roja',
-    mensaje: `${r.nombreComercial}: ya no se puede cumplir el plazo de suspensión; consultar con el anestesiólogo.`,
+    mensaje: `${r.nombreComercial}: ya no se puede cumplir el plazo de suspensión; valorar retrasar la cirugía.`,
     origen: 'plazos §3.2.5',
     soloAnestesiologo: false,
   };

@@ -14,7 +14,7 @@ import { reglaMetformina, reglaSglt2, reglaGlp1Semanal, reglaGlp1Diario, reglaBo
 import { reglaSacubitriloValsartan, reglaIecaAra2 } from '../../../src/dominio/reglas/cardiovasculares.ts';
 import { reglaNoCatalogado, reglaMantener, aplicarPlazoNoAlcanzable } from '../../../src/dominio/reglas/otros.ts';
 import { fechaHoraLimite } from '../../../src/dominio/fechas/plazos.ts';
-import { textoHojaPaciente, confirmar } from '../../../src/dominio/salidas/hojaFarmaco.ts';
+import { textoHojaPaciente } from '../../../src/dominio/salidas/hojaFarmaco.ts';
 
 // Intervención de referencia: jueves 15 de octubre de 2026, 08:00.
 const IV = new Date(2026, 9, 15, 8, 0);
@@ -105,13 +105,15 @@ describe('ACOD (§8.2)', () => {
     expect(r.accion).toBe('mantener');
   });
 
-  it('sin aclaramiento → requiere confirmación e indica el dato que falta', () => {
+  it('sin aclaramiento → tramo más prudente + validación (punto 8, 1.1)', () => {
     const r = reglaAcod(
       { idFarmaco: 'dabigatran', nombreComercial: 'Pradaxa', principioActivo: 'dabigatran', subtipo: 'dabigatran' },
       ctx({ neuroaxial: false, riesgoHemorragico: 'bajo', aclaramiento: null }),
     );
-    expect(r.requiereConfirmacion).toBeTrue();
-    expect(r.datoQueFalta).toBe('aclaramiento de creatinina');
+    expect(r.accion).toBe('suspender');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
+    expect(r.textoAnestesiologo).toContain('función renal');
   });
 });
 
@@ -175,12 +177,14 @@ describe('Antivitamina K (§8.1)', () => {
     expect(r.farmaco.accion).toBe('mantener');
   });
 
-  it('caso 12 §15: warfarina por prótesis mitral mecánica, 80 kg → puente enoxaparina 80 mg/12 h, requiere confirmación', () => {
+  it('caso 12 §15: warfarina por prótesis mitral mecánica, 80 kg → puente enoxaparina 80 mg/12 h + punto rojo (punto 8)', () => {
     const r = reglaAvk(
       { idFarmaco: 'warfarina', nombreComercial: 'Aldocumar', principio: 'warfarina', altoRiesgoTromboembolico: true },
       ctx({ pesoKg: 80, aclaramiento: 90 }),
     );
-    expect(r.farmaco.requiereConfirmacion).toBeTrue();
+    expect(r.farmaco.accion).toBe('suspender');
+    expect(r.farmaco.requiereConfirmacion).toBeFalse();
+    expect(r.farmaco.puntoValidacion?.tipo).toBe('posponer');
     expect(r.puente?.dosisMgPorToma).toBe(80);
     expect(r.puente?.intervaloHoras).toBe(12);
     expect(r.farmaco.textoAnestesiologo).toContain('80 mg');
@@ -295,10 +299,11 @@ describe('Antidiabéticos (§8.5)', () => {
 });
 
 describe('Cardiovasculares (§8.10)', () => {
-  it('sacubitrilo/valsartán → requiere confirmación', () => {
-    const r = reglaSacubitriloValsartan({ idFarmaco: 'sacubitrilo_valsartan', nombreComercial: 'Entresto' });
-    expect(r.accion).toBe('consultar');
-    expect(r.requiereConfirmacion).toBeTrue();
+  it('sacubitrilo/valsartán → suspender 24 h + punto de validación (punto 8)', () => {
+    const r = reglaSacubitriloValsartan({ idFarmaco: 'sacubitrilo_valsartan', nombreComercial: 'Entresto' }, ctx());
+    expect(r.accion).toBe('suspender');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
   it('IECA sin IC con disfunción sistólica (todas las excepciones false) → suspender 24 h', () => {
     const r = reglaIecaAra2(
@@ -315,12 +320,14 @@ describe('Cardiovasculares (§8.10)', () => {
     );
     expect(r.accion).toBe('mantener');
   });
-  it('IECA con información incompleta → requiere confirmación', () => {
+  it('IECA con información incompleta → no tomar el día de la IQ + validación (punto 8, 5.1)', () => {
     const r = reglaIecaAra2(
       { idFarmaco: 'enalapril', nombreComercial: 'Renitec', principio: 'enalapril' },
       ctx(),
     );
-    expect(r.requiereConfirmacion).toBeTrue();
+    expect(r.accion).toBe('suspender');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
 });
 
@@ -334,46 +341,50 @@ describe('Texto no oral y comportamiento de requiere-confirmación (§8.0, §12)
     const r = reglaMantener('ena', 'Renitec', ['enalapril'], 'mantener');
     expect(r.textoPaciente).toContain('sorbo de agua');
   });
-  it('requiere confirmación: la hoja del paciente solo muestra "el anestesiólogo le llamará" hasta confirmar', () => {
+  it('punto 8: un fármaco con punto de validación propone la pauta en la hoja (sin «le llamará»)', () => {
+    // Monoterapia P2Y12: ahora propone la suspensión y deja un punto amarillo, sin
+    // «requiere confirmación»; la hoja del paciente muestra la pauta directamente.
     const r = reglaP2y12({ idFarmaco: 'clopidogrel', nombreComercial: 'Plavix', principio: 'clopidogrel', monoterapia: true }, ctx({ neuroaxial: true }));
-    const antes = textoHojaPaciente(r);
-    expect(antes).toContain('el anestesiólogo le llamará');
-    expect(antes).not.toContain('Tome la última dosis');
-    const despues = textoHojaPaciente(confirmar(r, 'Dra. X'));
-    expect(despues).toContain('Tome la última dosis');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
+    const texto = textoHojaPaciente(r);
+    expect(texto).not.toContain('el anestesiólogo le llamará');
+    expect(texto).toContain('Tome la última dosis');
   });
 });
 
-describe('Hora de la toma obligatoria (§8.0 v4)', () => {
-  it('ACOD sin pauta horaria → requiere dato "hora de la toma" y NO genera fecha', () => {
+describe('Hora de la toma asumida (punto 8, 11.1)', () => {
+  it('ACOD sin pauta horaria → asume la toma más tardía (23:59), genera fecha + validación', () => {
     const r = reglaAcod(
       { idFarmaco: 'apixaban', nombreComercial: 'Eliquis', principioActivo: 'apixaban', subtipo: 'antixa' },
       ctxSinPauta({ riesgoHemorragico: 'bajo', aclaramiento: 70 }),
     );
-    expect(r.requiereConfirmacion).toBeTrue();
-    expect(r.datoQueFalta).toBe('hora de la toma');
-    expect(r.fechaHoraUltimaToma).toBeUndefined();
+    expect(r.accion).toBe('suspender');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.fechaHoraUltimaToma !== undefined).toBeTrue();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
-  it('AINE sin pauta → requiere dato "hora de la toma", sin fecha', () => {
+  it('AINE sin pauta → asume 23:59, genera fecha', () => {
     const r = reglaAine({ idFarmaco: 'ibu', nombreComercial: 'Neobrufen', principio: 'ibuprofeno' }, ctxSinPauta());
-    expect(r.datoQueFalta).toBe('hora de la toma');
-    expect(r.fechaHoraUltimaToma).toBeUndefined();
+    expect(r.fechaHoraUltimaToma !== undefined).toBeTrue();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
-  it('litio sin pauta → requiere dato, sin fecha', () => {
+  it('litio sin pauta → asume 23:59, genera fecha + validación', () => {
     const r = reglaLitio({ idFarmaco: 'li', nombreComercial: 'Plenur' }, ctxSinPauta({ riesgoCardiovascular: 'alto' }));
-    expect(r.datoQueFalta).toBe('hora de la toma');
-    expect(r.fechaHoraUltimaToma).toBeUndefined();
+    expect(r.fechaHoraUltimaToma !== undefined).toBeTrue();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
 });
 
 describe('Genéricas y plazo no alcanzable', () => {
-  it('caso 20 §15: fármaco no catalogado → mantener y consultar', () => {
+  it('caso 20 §15: fármaco no catalogado → mantener + validación (punto 8, 9.1)', () => {
     const r = reglaNoCatalogado('MedicamentoRaro');
     expect(r.accion).toBe('mantener');
-    expect(r.requiereConfirmacion).toBeTrue();
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
 
-  it('caso 15 §15: clopidogrel con IQ dentro de 3 días → plazo no alcanzable, requiere confirmación', () => {
+  it('caso 15 §15: clopidogrel con IQ dentro de 3 días → plazo no alcanzable: «no tome más dosis» + punto rojo (punto 8, 9.3)', () => {
     // Plazo 5 días para clopidogrel, pero "ahora" es 3 días antes de la IQ.
     const r = reglaP2y12(
       { idFarmaco: 'clopidogrel', nombreComercial: 'Plavix', principio: 'clopidogrel', monoterapia: false },
@@ -381,8 +392,10 @@ describe('Genéricas y plazo no alcanzable', () => {
     );
     const ahora = fechaHoraLimite(IV, 3 * 24); // 3 días antes de la IQ
     const { resultado, alerta } = aplicarPlazoNoAlcanzable(r, ctx(), ahora);
-    expect(resultado.requiereConfirmacion).toBeTrue();
-    expect(resultado.accion).toBe('consultar');
+    expect(resultado.requiereConfirmacion).toBeFalse();
+    expect(resultado.accion).toBe('suspender');
+    expect(resultado.textoPaciente).toContain('No tome más dosis');
+    expect(resultado.puntoValidacion?.tipo).toBe('posponer');
     expect(alerta?.gravedad).toBe('roja');
   });
 
