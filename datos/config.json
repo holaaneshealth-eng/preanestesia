@@ -10,6 +10,7 @@
   "prehabilitacion_activa": false,
   "url_prehabilitame": "https://holaaneshealth-eng.github.io/Prehabilitame/",
   "url_vista_paciente": "https://holaaneshealth-eng.github.io/preanestesia/paciente/",
+  "cloudflare_proyecto": "aneshealth-preanestesia",
   "version_contenido": "0.1.0",
   "fecha_revision_clinica": "2026-09-29"
 }

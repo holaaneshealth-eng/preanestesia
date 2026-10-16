@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:node": "node --experimental-strip-types --test \"tests/**/*.test.ts\"",
+    "verificar:despliegue": "node --experimental-strip-types scripts/comprobar-despliegue.ts",
     "informe:casos": "node --experimental-strip-types scripts/generar-informe-casos.ts",
     "contenido:clinico": "node --experimental-strip-types scripts/generar-contenido-clinico.ts",
     "lista:nombres": "node --experimental-strip-types scripts/generar-lista-nombres.ts",

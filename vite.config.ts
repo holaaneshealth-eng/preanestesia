@@ -7,13 +7,57 @@
  * paciente viajan en el fragmento «#p=…» de la URL (que nunca llega al servidor ni al
  * service worker) y solo existen en memoria, por lo que jamás se guardan en caché.
  */
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { resolve } from 'node:path';
+import { writeFileSync } from 'node:fs';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import obfuscator from 'vite-plugin-javascript-obfuscator';
+import config from './datos/config.json';
+import { rutaBase, mostrarBandaPrueba, urlVistaPaciente, esCloudflare } from './despliegue.config.ts';
 
 const raiz = import.meta.dirname;
+
+// ———————————————— Despliegue (GitHub Pages o Cloudflare Pages) ————————————————
+// Decidido en tiempo de compilación según las variables que pone Cloudflare Pages.
+const entornoDespliegue = {
+  CF_PAGES: process.env.CF_PAGES,
+  CF_PAGES_BRANCH: process.env.CF_PAGES_BRANCH,
+};
+const BASE = rutaBase(entornoDespliegue);
+const MOSTRAR_BANDA = mostrarBandaPrueba(entornoDespliegue);
+const URL_VISTA_PACIENTE = urlVistaPaciente(
+  entornoDespliegue,
+  config.cloudflare_proyecto,
+  config.url_vista_paciente,
+);
+
+/**
+ * Plugin de verificación: solo con EMITIR_META_DESPLIEGUE=1 escribe un
+ * `despliegue.json` en el dist con lo que se ha decidido (base, banda, URL del QR).
+ * Lo usa scripts/comprobar-despliegue.ts; en los builds reales no se emite.
+ */
+function pluginMetaDespliegue(): Plugin {
+  let outDir = 'dist';
+  return {
+    name: 'aneshealth-meta-despliegue',
+    apply: 'build',
+    configResolved(c) {
+      outDir = c.build.outDir;
+    },
+    closeBundle() {
+      if (process.env.EMITIR_META_DESPLIEGUE !== '1') return;
+      const meta = {
+        base: BASE,
+        mostrarBanda: MOSTRAR_BANDA,
+        urlVistaPaciente: URL_VISTA_PACIENTE,
+        cloudflare: esCloudflare(entornoDespliegue),
+        rama: entornoDespliegue.CF_PAGES_BRANCH ?? null,
+      };
+      writeFileSync(resolve(outDir, 'despliegue.json'), JSON.stringify(meta, null, 2));
+    },
+  };
+}
 
 // Ofuscación activable por variable de entorno (Bloque III-B, protección del código).
 // Se desactiva por defecto para que la vista previa (rama desarrollo) y el E2E sean
@@ -48,11 +92,21 @@ const opcionesOfuscacion = {
   unicodeEscapeSequence: false,
 };
 
-// El base path depende del repositorio en GitHub Pages: /preanestesia/
+// La ruta base depende de dónde se compile: «/preanestesia/» en GitHub Pages, «/» en
+// Cloudflare Pages (ver despliegue.config.ts). El manifest de la PWA, el service worker
+// y los enlaces internos se derivan de BASE para que funcionen en ambos sitios.
 export default defineConfig({
-  base: '/preanestesia/',
+  base: BASE,
+  // Valores decididos en el build y "horneados" en el bundle (según el despliegue):
+  //  - __MOSTRAR_BANDA__: si se pinta la banda «VERSIÓN DE PRUEBA · NO USAR CON PACIENTES».
+  //  - __URL_VISTA_PACIENTE__: dirección a la que apunta el QR del paciente.
+  define: {
+    __MOSTRAR_BANDA__: JSON.stringify(MOSTRAR_BANDA),
+    __URL_VISTA_PACIENTE__: JSON.stringify(URL_VISTA_PACIENTE),
+  },
   plugins: [
     react(),
+    pluginMetaDespliegue(),
     // La ofuscación se aplica al bundle final (solo en producción con OFUSCAR=1).
     ...(ofuscar
       ? [obfuscator({ apply: 'build', options: opcionesOfuscacion })]
@@ -64,8 +118,8 @@ export default defineConfig({
         name: 'AnesHealth · Entrevista preanestésica',
         short_name: 'AnesHealth',
         description: 'Entrevista preanestésica de enfermería.',
-        start_url: '.',
-        scope: '/preanestesia/',
+        start_url: BASE,
+        scope: BASE,
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#0b6b5a',

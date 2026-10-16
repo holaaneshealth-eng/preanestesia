@@ -1,0 +1,5 @@
+# Cabeceras para Cloudflare Pages (Vite copia public/ a la raíz del dist → /_headers).
+# GitHub Pages ignora este fichero; solo tiene efecto en Cloudflare.
+/*
+  X-Robots-Tag: noindex
+  Referrer-Policy: no-referrer

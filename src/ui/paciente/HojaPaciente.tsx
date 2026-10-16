@@ -32,11 +32,15 @@ interface Props {
 
 /**
  * Dirección base de la vista del paciente a la que apuntan los QR (§8.16, Bloque
- * III-A). Sale de `config.url_vista_paciente`; así, al migrar de GitHub Pages a
- * Cloudflare basta con cambiar esa clave. Si no estuviera configurada, se usa la
- * ruta «/paciente/» del propio despliegue actual como respaldo.
+ * III-A). Se decide en el build según dónde se compile (GitHub Pages o Cloudflare
+ * Pages, con la rama): el valor `__URL_VISTA_PACIENTE__` lo hornea Vite
+ * (ver despliegue.config.ts). Respaldos: `config.url_vista_paciente` y, si no, la
+ * ruta «/paciente/» del propio despliegue actual.
  */
 function urlVistaPaciente(): string {
+  if (typeof __URL_VISTA_PACIENTE__ !== 'undefined' && __URL_VISTA_PACIENTE__.length > 0) {
+    return __URL_VISTA_PACIENTE__;
+  }
   const u = (config as { url_vista_paciente?: string }).url_vista_paciente;
   if (u && u.length > 0) return u;
   return `${location.origin}${location.pathname.replace(/\/[^/]*$/, '')}/paciente/`;

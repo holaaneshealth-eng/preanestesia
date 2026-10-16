@@ -46,7 +46,13 @@ jobs:
         # Si aún no hay pruebas E2E, este paso no falla (Playwright sale 0 sin tests).
         continue-on-error: false
 
-      - name: Build (vista previa)
+      - name: Verificar builds de despliegue (GitHub Pages + Cloudflare main/desarrollo)
+        # Compila las tres variantes (incluida la de Cloudflare simulando CF_PAGES=1
+        # con CF_PAGES_BRANCH=main y =desarrollo) y comprueba ruta base, banda de prueba
+        # y dirección del QR. No despliega nada; solo verifica.
+        run: npm run verificar:despliegue
+
+      - name: Build (vista previa de GitHub Pages)
         run: npm run build
 
       - name: Subir artefacto de Pages
