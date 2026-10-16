@@ -46,6 +46,12 @@ interface Props {
   basicos: { edadAnios: number; pesoKg: number; sexo: Sexo };
   /** Aclaramiento introducido a mano (único para toda la entrevista, §8.2/§8.4). */
   aclaramientoManual: AclaramientoManual | null;
+  /**
+   * Filtrado glomerular apuntado en el paso de pruebas (punto 8, 1.1): sustituto del
+   * aclaramiento cuando no hay creatinina ni aclaramiento propios. Debe resolverse igual
+   * aquí, en el resumen y en la hoja del paciente (función compartida resolverAclaramiento).
+   */
+  filtradoGlomerular?: number;
   /** Cambia el aclaramiento manual (se recalculan las reglas renales). */
   onAclaramientoManual: (a: AclaramientoManual | null) => void;
   onContinuar: (medicacion: FarmacoTomadoUi[]) => void;
@@ -60,7 +66,7 @@ interface Props {
 
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-export function PasoMedicacion({ inicial, intervencion, enfermedades, respuestasModulos, basicos, aclaramientoManual, onAclaramientoManual, onContinuar, onVolver, onIrAEnfermedades }: Props) {
+export function PasoMedicacion({ inicial, intervencion, enfermedades, respuestasModulos, basicos, aclaramientoManual, filtradoGlomerular, onAclaramientoManual, onContinuar, onVolver, onIrAEnfermedades }: Props) {
   const catalogo = useMemo(() => cargarFarmacos(), []);
   const [medicacion, setMedicacion] = useState<FarmacoTomadoUi[]>(inicial ?? []);
   const [consulta, setConsulta] = useState('');
@@ -86,8 +92,8 @@ export function PasoMedicacion({ inicial, intervencion, enfermedades, respuestas
   // Aclaramiento efectivo (§8.2/§8.4): el del módulo renal/trasplante si existe; si
   // no, el introducido a mano en este paso. Valor único para toda la entrevista.
   const aclaramiento = useMemo(
-    () => resolverAclaramiento(hechos.aclaramiento, aclaramientoManual, basicos),
-    [hechos.aclaramiento, aclaramientoManual, basicos],
+    () => resolverAclaramiento(hechos.aclaramiento, aclaramientoManual, basicos, null, filtradoGlomerular ?? null),
+    [hechos.aclaramiento, aclaramientoManual, basicos, filtradoGlomerular],
   );
   // ¿Hay algún fármaco cuya suspensión dependa del riñón y el aclaramiento no venga de un módulo?
   const pedirAclaramiento = aclaramiento.fuente !== 'modulo' && medicacion.some((f) => reglaDependeAclaramiento(f.idRegla));
@@ -162,6 +168,7 @@ export function PasoMedicacion({ inicial, intervencion, enfermedades, respuestas
             intervencion={intervencion}
             hechos={hechos}
             aclaramientoEfectivo={aclaramiento.valor}
+            aclaramientoAproximadoFiltrado={aclaramiento.fuente === 'filtrado_glomerular'}
             pesoKg={basicos.pesoKg}
             onCambio={(c) => actualizar(i, c)}
             onQuitar={() => quitar(i)}
@@ -201,6 +208,7 @@ function FichaFarmaco({
   intervencion,
   hechos,
   aclaramientoEfectivo,
+  aclaramientoAproximadoFiltrado,
   pesoKg,
   onCambio,
   onQuitar,
@@ -208,8 +216,10 @@ function FichaFarmaco({
   f: FarmacoTomadoUi;
   intervencion: DatosIntervencion;
   hechos: DatosClinicos;
-  /** Aclaramiento efectivo (módulo o manual); sustituye a hechos.aclaramiento. */
+  /** Aclaramiento efectivo (módulo, manual o filtrado glomerular); sustituye a hechos.aclaramiento. */
   aclaramientoEfectivo: number | null;
+  /** Punto 8 (1.1): el aclaramiento es una aproximación por el filtrado glomerular. */
+  aclaramientoAproximadoFiltrado: boolean;
   pesoKg: number;
   onCambio: (c: CambioFarmaco) => void;
   onQuitar: () => void;
@@ -255,7 +265,7 @@ function FichaFarmaco({
     setHoraLibre('');
   }
 
-  const resultado = evaluarFicha(f, intervencion, hechos, pesoKg, aclaramientoEfectivo);
+  const resultado = evaluarFicha(f, intervencion, hechos, pesoKg, aclaramientoEfectivo, aclaramientoAproximadoFiltrado);
 
   return (
     <div className="ficha-farmaco">
@@ -428,7 +438,7 @@ interface ResultadoFicha {
 
 /** Calcula el resultado en vivo de un fármaco. Con fecha usa el despachador; sin
  *  fecha usa el modo margen del QR (garantía §8.16: nunca llama a construirContexto). */
-function evaluarFicha(f: FarmacoTomadoUi, intervencion: DatosIntervencion, hechos: DatosClinicos, pesoKg: number, aclaramientoEfectivo: number | null): ResultadoFicha {
+function evaluarFicha(f: FarmacoTomadoUi, intervencion: DatosIntervencion, hechos: DatosClinicos, pesoKg: number, aclaramientoEfectivo: number | null, aclaramientoAproximadoFiltrado = false): ResultadoFicha {
   const necesitaHoras = reglaNecesitaHoras(f.idRegla);
   if (necesitaHoras && f.horas.length === 0) {
     return { texto: 'Requiere dato: hora de la toma.', claseAviso: 'aviso-atencion' };
@@ -451,8 +461,9 @@ function evaluarFicha(f: FarmacoTomadoUi, intervencion: DatosIntervencion, hecho
     return { texto: inst[0]?.texto ?? '', claseAviso: 'aviso-info' };
   }
 
-  // Con fecha: despachador del motor, con peso y aclaramiento reales (módulo o manual).
-  const ctx = construirContexto(intervencion, pesoKg, aclaramientoEfectivo);
+  // Con fecha: despachador del motor, con peso y aclaramiento reales (módulo, manual o
+  // filtrado glomerular del paso de pruebas como aproximación, punto 8).
+  const ctx = construirContexto(intervencion, pesoKg, aclaramientoEfectivo, undefined, undefined, aclaramientoAproximadoFiltrado);
   const datos: DatosFarmacoUi = {
     idFarmaco: f.idFarmaco,
     nombreComercial: f.nombreComercial,

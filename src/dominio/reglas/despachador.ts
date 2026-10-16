@@ -94,7 +94,12 @@ function aplicarOverridesCatalogo(d: DatosFarmacoUi, r: ResultadoFarmaco): Resul
       ? `${out.textoAnestesiologo} ${d.textoAnestesiologoOverride}`
       : d.textoAnestesiologoOverride;
   }
-  if (d.requiereConfirmacionCatalogo) out.requiereConfirmacion = true;
+  // Punto 8: el `requiere_confirmacion = sí` del catálogo YA NO deja el fármaco
+  // «pendiente de confirmar» (eso contradiría el punto 8). En su lugar deja un punto
+  // de validación amarillo, salvo que la regla ya haya dejado uno más restrictivo.
+  if (d.requiereConfirmacionCatalogo && !out.puntoValidacion) {
+    out.puntoValidacion = { tipo: 'validar', motivo: `${out.nombreComercial}: fármaco marcado para revisión en el catálogo; validar el manejo.` };
+  }
   return out;
 }
 

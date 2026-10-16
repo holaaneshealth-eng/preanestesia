@@ -236,8 +236,14 @@ describe('Otros antiagregantes (§8.3)', () => {
 });
 
 describe('AAS > 200 mg con indicación cardiovascular (§8.3)', () => {
-  it('debe suspenderse (espacio cerrado) con indicación cardiovascular: mantener 100 mg + validación (punto 8)', () => {
+  it('espacio cerrado: cualquier dosis de AAS se suspende 5 días + validación (corrección C4b)', () => {
     const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 300, indicacionCardiovascular: true }, ctx({ espacioCerrado: true }));
+    expect(r.accion).toBe('suspender');
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
+  });
+  it('fuera del espacio cerrado (neuroaxial) con indicación cardiovascular: bajar a 100 mg/día + validación', () => {
+    const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 300, indicacionCardiovascular: true }, ctx({ neuroaxial: true }));
     expect(r.accion).toBe('ajustar');
     expect(r.requiereConfirmacion).toBeFalse();
     expect(r.puntoValidacion?.tipo).toBe('validar');

@@ -282,8 +282,8 @@ function add(id: string, calculado: string, textoPaciente: string, _a?: string |
   add('C1', farmacoResumen(r), r.textoPaciente, 'mantener', r.accion === 'mantener');
 }
 {
-  const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 100 }, ctx({ espacioCerrado: true }));
-  add('C2', farmacoResumen(r), r.textoPaciente, 'requiere confirmación', r.requiereConfirmacion);
+  const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 100 }, ctx({ espacioCerrado: true, pautaFarmaco: P('09:00') }));
+  add('C2', farmacoResumen(r), r.textoPaciente, 'suspender 5 días + validación', r.accion === 'suspender' && r.puntoValidacion?.tipo === 'validar');
 }
 {
   const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 300 }, ctx({ pautaFarmaco: P('09:00') }));
@@ -298,8 +298,8 @@ function add(id: string, calculado: string, textoPaciente: string, _a?: string |
   add('C3b', farmacoResumen(r), r.textoPaciente, 'suspender 5 días; última viernes 09/10 09:00', fh(r.fechaHoraUltimaToma) === 'vie 09/10 09:00');
 }
 {
-  const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 300, indicacionCardiovascular: true }, ctx({ espacioCerrado: true }));
-  add('C4b', `${farmacoResumen(r)}; nota anestesiólogo: ${r.textoAnestesiologo ?? '—'}`, r.textoPaciente, 'requiere confirmación; pasar a 100 mg/día', r.requiereConfirmacion && (r.textoAnestesiologo ?? '').includes('100 mg'));
+  const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 300, indicacionCardiovascular: true }, ctx({ espacioCerrado: true, pautaFarmaco: P('09:00') }));
+  add('C4b', farmacoResumen(r), r.textoPaciente, 'espacio cerrado: suspender 5 días + validación', r.accion === 'suspender' && r.puntoValidacion?.tipo === 'validar');
 }
 {
   const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 300 }, ctx({ retina: true, pautaFarmaco: P('09:00') }));

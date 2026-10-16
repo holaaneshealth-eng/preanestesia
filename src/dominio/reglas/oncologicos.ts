@@ -78,7 +78,7 @@ export function reglaAntiangiogenico(e: EntradaAntiangiogenico): ResultadoAntian
         ...base,
         accion: 'mantener',
         textoPaciente:
-          'Siga con su tratamiento como siempre. El anestesiólogo valorará la fecha de la operación y le avisará si hay que retrasarla.',
+          'Avise a su oncólogo de la fecha de la operación antes de recibir la siguiente dosis.',
         reglaAplicada: `Antiangiogénico sistémico: última dosis < 6-8 semanas${sinFecha ? ' (fecha desconocida: se asume reciente)' : ''} → valorar diferir la cirugía`,
         requiereConfirmacion: false,
         textoAnestesiologo: `Antiangiogénico sistémico reciente${sinFecha ? ' (no consta la fecha de la última dosis: se asume reciente)' : ''}: valorar diferir la cirugía programada ≥ 6-8 semanas desde la última dosis.`,

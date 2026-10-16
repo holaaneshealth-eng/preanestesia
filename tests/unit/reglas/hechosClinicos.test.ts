@@ -41,7 +41,7 @@ function farmaco(idRegla: string, p: Partial<DatosFarmacoUi> & { nombreComercial
 }
 
 describe('Hechos clínicos · derivación desde módulos', () => {
-  it('bug 1: cardiopatía isquémica con stent por SCA → hecho stent con motivo, y P2Y12 requiere confirmación', () => {
+  it('bug 1: cardiopatía isquémica con stent por SCA → hecho stent con motivo; el P2Y12 se suspende + validación (corrección C6)', () => {
     const hechos = derivarHechosClinicos(entrada({
       enfermedades: new Set(['cardiopatia_isquemica']),
       respuestas: { cardiopatia_isquemica: { portador_stent: true, stent_fecha: '2026-06-15', stent_motivo: 'sca' } },
@@ -50,10 +50,12 @@ describe('Hechos clínicos · derivación desde módulos', () => {
     expect(hechos.stent !== null).toBeTrue();
     expect(hechos.stent?.traSca).toBeTrue();
     expect(hechos.tieneAas).toBeTrue();
-    const r = evaluarFarmacoUi(farmaco('p2y12_clopidogrel', { nombreComercial: 'Plavix', principiosActivos: ['clopidogrel'] }), ctx(90), hechos);
-    // Punto 8 (3.4): portador de stent → mantener doble antiagregación + punto rojo.
+    const r = evaluarFarmacoUi(farmaco('p2y12_clopidogrel', { nombreComercial: 'Plavix', principiosActivos: ['clopidogrel'], horas: ['09:00'] }), ctx(90), hechos);
+    // Corrección C6: a nivel de regla, el portador de stent suspende el P2Y12 con punto
+    // amarillo (el stent reciente se marca aparte en evaluarStent, caso C5).
+    expect(r.accion).toBe('suspender');
     expect(r.requiereConfirmacion).toBeFalse();
-    expect(r.puntoValidacion?.tipo).toBe('posponer');
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
 
   it('bug 2: Plavix sin Adiro (monoterapia) → sugerencia de pasar a AAS + validación (punto 8)', () => {

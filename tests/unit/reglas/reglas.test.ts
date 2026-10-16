@@ -290,11 +290,14 @@ describe('Antidiabéticos (§8.5)', () => {
     expect(r.requiereConfirmacion).toBeFalse();
   });
 
-  it('bomba de insulina: cirugía de riesgo intermedio o alto → requiere confirmación', () => {
+  it('bomba de insulina: cirugía de riesgo intermedio o alto → venir con la bomba + validación (punto 8)', () => {
     const rInter = reglaBombaInsulina({ idFarmaco: 'bomba', nombreComercial: 'Bomba' }, ctx({ riesgoCardiovascular: 'intermedio' }));
-    expect(rInter.requiereConfirmacion).toBeTrue();
+    expect(rInter.requiereConfirmacion).toBeFalse();
+    expect(rInter.puntoValidacion?.tipo).toBe('validar');
+    expect(rInter.textoPaciente).toContain('material de recambio');
     const rAlto = reglaBombaInsulina({ idFarmaco: 'bomba', nombreComercial: 'Bomba' }, ctx({ riesgoCardiovascular: 'alto' }));
-    expect(rAlto.requiereConfirmacion).toBeTrue();
+    expect(rAlto.requiereConfirmacion).toBeFalse();
+    expect(rAlto.puntoValidacion?.tipo).toBe('validar');
   });
 });
 

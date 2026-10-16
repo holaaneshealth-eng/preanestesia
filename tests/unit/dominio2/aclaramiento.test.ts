@@ -28,10 +28,34 @@ describe('§8.2/§8.4 · resolverAclaramiento', () => {
     expect(r.fuente).toBe('manual');
   });
 
-  it('«no disponible» → null (regla requiere confirmación, A7)', () => {
+  it('«no disponible» → usa el filtrado glomerular del paso de pruebas si lo hay (punto 8, 1.1)', () => {
+    const r = resolverAclaramiento(null, { tipo: 'no_disponible' }, DATOS, null, 40);
+    expect(r.valor).toBe(40);
+    expect(r.fuente).toBe('filtrado_glomerular');
+  });
+
+  it('«no disponible» sin filtrado → null (fuente manual)', () => {
     const r = resolverAclaramiento(null, { tipo: 'no_disponible' }, DATOS);
     expect(r.valor).toBe(null);
     expect(r.fuente).toBe('manual');
+  });
+
+  it('sin creatinina ni aclaramiento, con filtrado glomerular → usa el filtrado (punto 8, 1.1)', () => {
+    const r = resolverAclaramiento(null, null, DATOS, null, 35);
+    expect(r.valor).toBe(35);
+    expect(r.fuente).toBe('filtrado_glomerular');
+  });
+
+  it('el dato manual (creatinina/aclaramiento) tiene prioridad sobre el filtrado glomerular', () => {
+    const r = resolverAclaramiento(null, { tipo: 'aclaramiento', valor: 55 }, DATOS, null, 35);
+    expect(r.valor).toBe(55);
+    expect(r.fuente).toBe('manual');
+  });
+
+  it('el módulo renal tiene prioridad sobre el filtrado glomerular', () => {
+    const r = resolverAclaramiento(45, null, DATOS, '2026-06-01', 35);
+    expect(r.valor).toBe(45);
+    expect(r.fuente).toBe('modulo');
   });
 
   it('sin módulo y sin manual → null, fuente ninguno', () => {

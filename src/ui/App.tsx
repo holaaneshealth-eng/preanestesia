@@ -409,6 +409,7 @@ export function App() {
             respuestasModulos={cribado?.respuestasModulos ?? {}}
             basicos={{ edadAnios: basicos.edadAnios, pesoKg: basicos.pesoKg, sexo: basicos.sexo }}
             aclaramientoManual={entrevista.aclaramientoManual}
+            {...(entrevista.pruebasComplementarias?.filtradoGlomerular !== undefined ? { filtradoGlomerular: entrevista.pruebasComplementarias.filtradoGlomerular } : {})}
             onAclaramientoManual={(a) => setEntrevista((e) => ({ ...e, aclaramientoManual: a }))}
             onVolver={(datos) => {
               setEntrevista((e) => ({ ...e, medicacion: datos }));

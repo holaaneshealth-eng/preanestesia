@@ -76,9 +76,26 @@ export function reglaAas(e: EntradaAas, ctx: ContextoReglas): ResultadoFarmaco {
       requiereConfirmacion: false,
     };
   }
+  // Punto 8 (corrección C4b): en cirugía de espacio cerrado, CUALQUIER dosis de AAS se
+  // suspende 5 días (igual que el C2), con punto amarillo. La bajada a 100 mg/día solo se
+  // aplica fuera del espacio cerrado.
+  if (ctx.espacioCerrado) {
+    const plazoEc = plazoDesdeDias(ctx, 5);
+    const rEc: ResultadoFarmaco = {
+      ...base,
+      accion: 'suspender',
+      fechaHoraUltimaToma: plazoEc.fechaHoraUltimaToma,
+      textoPaciente: plazoEc.textoPaciente,
+      reglaAplicada: 'AAS en cirugía de espacio cerrado: suspender 5 días (criterio prudente)',
+      requiereConfirmacion: false,
+      textoAnestesiologo: 'Confirmar si el riesgo de sangrado del SNC justifica mantener el AAS en lugar de suspenderlo.',
+      puntoValidacion: { tipo: 'validar', motivo: 'AAS en cirugía de espacio cerrado: se propone suspender 5 días; confirmar la suspensión.' },
+    };
+    return aplicarHoraAsumida(rEc, plazoEc);
+  }
   if (e.indicacionCardiovascular) {
-    // Punto 8 (3.2): se propone MANTENER a dosis cardioprotectora (100 mg/día) como
-    // pauta concreta, con punto amarillo para confirmar la bajada de dosis.
+    // Punto 8 (3.2): fuera del espacio cerrado, se propone MANTENER a dosis
+    // cardioprotectora (100 mg/día), con punto amarillo para confirmar la bajada.
     return {
       ...base,
       accion: 'ajustar',
@@ -136,22 +153,25 @@ export function reglaP2y12(e: EntradaP2y12, ctx: ContextoReglas): ResultadoFarma
     reglaAplicada: `${e.principio}: suspender ${dias} días${neuroaxialOProfundo(ctx) ? ' (neuroaxial/bloqueo profundo)' : ''}`,
     requiereConfirmacion: false,
   };
-  // Punto 8: monoterapia P2Y12 → se propone la suspensión y se sugiere sustituir por
-  // AAS 100 mg durante la retirada; punto amarillo.
+  // Punto 8 (corrección C6): portador de stent NO reciente (el stent reciente se trata
+  // en evaluarStent, §8.3). Se SUSPENDE el P2Y12 con su plazo (igual que sin stent) y se
+  // deja un punto amarillo para confirmar con cardiología si hay dudas. Si además está en
+  // monoterapia, se aplica también la sugerencia de AAS 100 mg (C7).
+  if (e.portadorStent) {
+    res.textoAnestesiologo = e.monoterapia
+      ? 'Stent no reciente: confirmar la suspensión del P2Y12 con cardiología si hay dudas. En monoterapia, valorar sustituir por AAS 100 mg/día durante la retirada.'
+      : 'Stent no reciente: confirmar la suspensión del P2Y12 con cardiología si hay dudas. Mantener el AAS si lo toma.';
+    res.puntoValidacion = {
+      tipo: 'validar',
+      motivo: `${e.principio}: stent no reciente; se propone suspender ${dias} días (mantener el AAS si lo toma). Confirmar la suspensión del P2Y12 con cardiología si hay dudas.`,
+    };
+    return aplicarHoraAsumida(res, plazo);
+  }
+  // Punto 8: monoterapia P2Y12 (sin stent) → se propone la suspensión y se sugiere
+  // sustituir por AAS 100 mg durante la retirada; punto amarillo (C7).
   if (e.monoterapia) {
     res.textoAnestesiologo = 'Valorar sustituir por AAS 100 mg/día durante la retirada.';
     res.puntoValidacion = { tipo: 'validar', motivo: `${e.principio} en monoterapia: se propone suspender ${dias} días; valorar sustituir por AAS 100 mg/día.` };
-  }
-  // Punto 8 (3.4): portador de stent → se propone mantener la doble antiagregación y
-  // diferir la cirugía electiva; punto rojo.
-  if (e.portadorStent) {
-    res.accion = 'mantener';
-    res.textoPaciente = TEXTO_MANTENER;
-    delete res.fechaHoraUltimaToma;
-    res.reglaAplicada = `${e.principio}: portador de stent → mantener la doble antiagregación y diferir la cirugía electiva (§8.3)`;
-    res.textoAnestesiologo = 'Portador de stent: valorar diferir la cirugía electiva hasta cumplir el plazo del stent; no suspender la doble antiagregación sin cardiología (§8.3).';
-    res.puntoValidacion = { tipo: 'posponer', motivo: `${e.principio}: portador de stent; valorar diferir la cirugía / no suspender la doble antiagregación.` };
-    return res;
   }
   return aplicarHoraAsumida(res, plazo);
 }

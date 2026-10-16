@@ -265,24 +265,36 @@ export interface EntradaBombaInsulina {
 }
 
 export function reglaBombaInsulina(e: EntradaBombaInsulina, ctx: ContextoReglas): ResultadoFarmaco {
-  // La decisión depende SOLO del riesgo quirúrgico (decisión del servicio, 2026-10-04;
-  // se retira el régimen): riesgo bajo → sin confirmación; intermedio o alto → confirmación.
+  // La decisión depende del riesgo quirúrgico. Riesgo bajo: basal 80 %, suspender bolos.
+  // Punto 8 (corrección 5): riesgo intermedio/alto → se propone venir con la bomba al
+  // ritmo basal habitual y traer recambios, y queda un punto amarillo para valorar el
+  // paso a insulina intravenosa (CPOC/JBDS); ya no «requiere confirmación».
   const bajoRiesgo = ctx.riesgoCardiovascular === 'bajo';
-  const requiereConfirmacion = !bajoRiesgo;
 
-  const res: ResultadoFarmaco = {
+  if (bajoRiesgo) {
+    return {
+      idFarmaco: e.idFarmaco,
+      nombreComercial: e.nombreComercial,
+      principiosActivos: ['insulina_bomba'],
+      accion: 'ajustar',
+      textoPaciente: 'Ponga la basal al 80 % de lo habitual y no se administre bolos el día de la intervención.',
+      reglaAplicada: 'Bomba de insulina, cirugía de riesgo bajo: basal 80 %, suspender bolos',
+      fuente: FUENTE,
+      requiereConfirmacion: false,
+    };
+  }
+
+  return {
     idFarmaco: e.idFarmaco,
     nombreComercial: e.nombreComercial,
     principiosActivos: ['insulina_bomba'],
-    accion: requiereConfirmacion ? 'consultar' : 'ajustar',
-    textoPaciente: requiereConfirmacion
-      ? 'Sobre su bomba de insulina, el anestesiólogo le indicará qué hacer. No cambie la pauta por su cuenta.'
-      : 'Ponga la basal al 80 % de lo habitual y no se administre bolos el día de la intervención.',
-    reglaAplicada: bajoRiesgo
-      ? 'Bomba de insulina, cirugía de riesgo bajo: basal 80 %, suspender bolos (sin confirmación)'
-      : 'Bomba de insulina, cirugía de riesgo intermedio/alto: requiere confirmación',
+    accion: 'ajustar',
+    textoPaciente:
+      'Venga con la bomba funcionando a su ritmo basal habitual y traiga su material de recambio. En el hospital decidirán si la mantienen o la cambian por insulina en el suero.',
+    reglaAplicada: 'Bomba de insulina, cirugía de riesgo intermedio/alto: venir con la bomba a ritmo basal; valorar paso a insulina IV (CPOC/JBDS)',
     fuente: FUENTE,
-    requiereConfirmacion,
+    requiereConfirmacion: false,
+    textoAnestesiologo: 'Valorar el paso a insulina intravenosa perioperatoria (CPOC/JBDS) o mantener la bomba a ritmo basal.',
+    puntoValidacion: { tipo: 'validar', motivo: 'Bomba de insulina: valorar pasar a insulina intravenosa (CPOC/JBDS).' },
   };
-  return res;
 }

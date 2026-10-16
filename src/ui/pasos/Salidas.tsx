@@ -79,11 +79,10 @@ function fechaCorta(d: Date): string {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
 
-export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validaciones, onValidarPunto, fechaReferencia }: Props) {
+export function Salidas({ entrevista, modalidad, validaciones, onValidarPunto, fechaReferencia }: Props) {
   const { intervencion, procedimiento, basicos, antecedentes, mtnd4, alergias, habitos, cribado, pruebasComplementarias, medicacion, viaAerea, consentimiento } = entrevista;
   const [soloAscii, setSoloAscii] = useState(false);
   const [asaManual, setAsaManual] = useState<ClaseAsa | ''>('');
-  const [nombresPend, setNombresPend] = useState<Record<number, string>>({});
   // Nombre tecleado para validar cada punto (transitorio). El estado resuelto vive
   // en la entrevista (prop `validaciones`), para que lo use también la hoja del paciente.
   const [valNombre, setValNombre] = useState<Record<string, string>>({});
@@ -542,56 +541,9 @@ export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validacione
         </ul>
       )}
 
-      {/* Puntos pendientes de confirmación (§12). La hoja/QR se generan igualmente;
-          aquí el anestesiólogo confirma cada fármaco o lo marca como «le llamaremos». */}
-      {(() => {
-        const meds = medicacion ?? [];
-        const pendientes = salida.plan
-          .map((f, i) => ({ f, i }))
-          .filter(({ f, i }) => f.resultado.requiereConfirmacion && !meds[i]?.confirmadoPor && !meds[i]?.leLlamaremos);
-        if (pendientes.length === 0) return null;
-        return (
-          <>
-            <h4>Puntos pendientes de confirmación</h4>
-            <p className="aviso aviso-info">
-              La hoja y el QR del paciente se generan igualmente; mientras tanto, estos fármacos aparecen con la
-              frase «el anestesiólogo le llamará». Confirme cada uno con su nombre o márquelo como «le llamaremos».
-            </p>
-            <ul className="lista-pendientes">
-              {pendientes.map(({ f, i }) => (
-                <li key={`${f.resultado.nombreComercial}-${i}`} className="pendiente">
-                  <strong>{f.resultado.nombreComercial}</strong>
-                  <div className="pendiente-controles">
-                    <input
-                      type="text"
-                      placeholder="Nombre del anestesiólogo"
-                      value={nombresPend[i] ?? ''}
-                      onChange={(e) => setNombresPend((n) => ({ ...n, [i]: e.target.value }))}
-                      aria-label={`Nombre del anestesiólogo para ${f.resultado.nombreComercial}`}
-                    />
-                    <button
-                      type="button"
-                      className="boton-secundario"
-                      disabled={!(nombresPend[i] ?? '').trim() || !onConfirmarFarmaco}
-                      onClick={() => onConfirmarFarmaco?.(i, { confirmadoPor: (nombresPend[i] ?? '').trim(), leLlamaremos: false })}
-                    >
-                      Confirmar
-                    </button>
-                    <button
-                      type="button"
-                      className="boton-secundario"
-                      disabled={!onConfirmarFarmaco}
-                      onClick={() => onConfirmarFarmaco?.(i, { leLlamaremos: true })}
-                    >
-                      Le llamaremos
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </>
-        );
-      })()}
+      {/* Punto 8: el bloque «Puntos pendientes de confirmación» se ha retirado. Ningún
+          fármaco queda «pendiente de confirmar»: cada regla propone una pauta y deja,
+          si procede, un punto de validación clínica (mostrado arriba). */}
 
       <h4>Pruebas complementarias</h4>
       <ul className="resumen-lista">

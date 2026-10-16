@@ -200,12 +200,12 @@ describe('Casos C · antiagregantes', () => {
     expect(r.accion).toBe('suspender');
     expect(esFecha(r.fechaHoraUltimaToma, 2026, 9, 9, 9, 0)).toBeTrue();
   });
-  it('C4b AAS 300 mg cardiovascular, craneotomía (espacio cerrado): mantener 100 mg + validación (punto 8)', () => {
-    const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 300, indicacionCardiovascular: true }, ctx({ espacioCerrado: true }));
-    expect(r.accion).toBe('ajustar');
+  it('C4b AAS 300 mg cardiovascular, craneotomía (espacio cerrado): suspender 5 días + validación (corrección C4b)', () => {
+    const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 300, indicacionCardiovascular: true }, ctx({ espacioCerrado: true, pautaFarmaco: P('09:00') }));
+    expect(r.accion).toBe('suspender');
+    expect(esFecha(r.fechaHoraUltimaToma, 2026, 9, 9, 9, 0)).toBeTrue();
     expect(r.requiereConfirmacion).toBeFalse();
     expect(r.puntoValidacion?.tipo).toBe('validar');
-    expect(r.textoAnestesiologo).toContain('100 mg');
   });
   it('C4c AAS 300 mg no cardiovascular, vitrectomía (retina): suspender 5 días (vie 09/10 09:00)', () => {
     const r = reglaAas({ idFarmaco: 'aas', nombreComercial: 'Adiro', dosisDiariaMg: 300 }, ctx({ retina: true, pautaFarmaco: P('09:00') }));
@@ -230,14 +230,15 @@ describe('Casos C · antiagregantes', () => {
     expect(s.suprimirPautaAntiagregantesEnHoja).toBeTrue();
     expect(s.alertas[0]?.gravedad).toBe('roja');
   });
-  it('C6 stent por SCA hace 14 meses: no reciente; clopidogrel portador de stent → mantener doble antiagregación + punto rojo (punto 8)', () => {
+  it('C6 stent por SCA hace 14 meses: no reciente; clopidogrel se suspende 5 días (vie 09/10 09:00) + validación amarilla (corrección C6)', () => {
     const s = evaluarStent({ mesesDesdeImplante: 14, traSca: true }, ctx());
     expect(s.recienteRequiereConfirmacion).toBeFalse();
     const r = reglaP2y12({ idFarmaco: 'clopidogrel', nombreComercial: 'Plavix', principio: 'clopidogrel', monoterapia: false, portadorStent: true }, ctx({ pautaFarmaco: P('09:00') }));
-    // Punto 8 (3.4): portador de stent → mantener la doble antiagregación y diferir; punto rojo.
-    expect(r.accion).toBe('mantener');
+    // Corrección C6: stent NO reciente → suspender el P2Y12 (mantener el AAS); punto amarillo.
+    expect(r.accion).toBe('suspender');
+    expect(esFecha(r.fechaHoraUltimaToma, 2026, 9, 9, 9, 0)).toBeTrue();
     expect(r.requiereConfirmacion).toBeFalse();
-    expect(r.puntoValidacion?.tipo).toBe('posponer');
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
   it('C7 clopidogrel 09:00 monoterapia, raquídea: 7 días, última mié 07/10 09:00 + validación (punto 8)', () => {
     const r = reglaP2y12({ idFarmaco: 'clopidogrel', nombreComercial: 'Plavix', principio: 'clopidogrel', monoterapia: true }, ctx({ neuroaxial: true, pautaFarmaco: P('09:00') }));
@@ -310,8 +311,10 @@ describe('Casos D · antidiabéticos', () => {
   it('D10 bomba, cirugía de riesgo bajo: sin confirmación', () => {
     expect(reglaBombaInsulina({ idFarmaco: 'b', nombreComercial: 'Bomba' }, ctx({ riesgoCardiovascular: 'bajo' })).requiereConfirmacion).toBeFalse();
   });
-  it('D11 bomba, cirugía de riesgo intermedio: confirmación', () => {
-    expect(reglaBombaInsulina({ idFarmaco: 'b', nombreComercial: 'Bomba' }, ctx({ riesgoCardiovascular: 'intermedio' })).requiereConfirmacion).toBeTrue();
+  it('D11 bomba, cirugía de riesgo intermedio: venir con la bomba + validación (punto 8)', () => {
+    const r = reglaBombaInsulina({ idFarmaco: 'b', nombreComercial: 'Bomba' }, ctx({ riesgoCardiovascular: 'intermedio' }));
+    expect(r.requiereConfirmacion).toBeFalse();
+    expect(r.puntoValidacion?.tipo).toBe('validar');
   });
 });
 
