@@ -44,10 +44,10 @@ Esperado: 96 h. Adelantar la toma del domingo 11/10 de las 09:00 a las 08:00; es
 Esperado: 120 h. Adelantar la toma del sábado 10/10 de las 09:00 a las 08:00; es la última.
 
 **A7.** Edoxabán 60 mg a las 09:00. Sin creatinina disponible. Colecistectomía laparoscópica.
-Esperado: requiere confirmación, indicando que falta el aclaramiento. Tarjeta de coherencia de dato que falta. En la hoja del paciente, la línea «el anestesiólogo le llamará».
+Esperado (punto 8, 1.1): se propone la suspensión con el supuesto más prudente del tramo (si hubiera filtrado glomerular apuntado, se usaría ese valor como aproximación). Punto de validación amarillo «función renal no disponible: confirmar». En la hoja del paciente, la pauta de suspensión (no «el anestesiólogo le llamará»).
 
 **A8.** Apixabán por FA con ictus hace 2 meses. Colectomía.
-Esperado: alerta de ictus < 3 meses. Requiere confirmación con el texto «consultar con hematología o cardiología el cambio a acenocumarol para poder hacer terapia puente».
+Esperado (punto 8, 1.2): alerta de ictus < 3 meses. Se propone la suspensión estándar del tramo (sin cambiar a acenocumarol ni terapia puente, EHRA 2021/PAUSE). Punto de validación rojo «alto riesgo trombótico: valorar manejo con hematología o cardiología».
 
 **A9.** Acenocumarol a las 18:00 por FA sin criterios de alto riesgo trombótico. Colecistectomía laparoscópica.
 Esperado: suspender 3 días (72 h). Última toma domingo 11/10 18:00. Coordinar con su control de anticoagulación. INR < 1,5 el día de la intervención. Sin terapia puente.
@@ -56,10 +56,10 @@ Esperado: suspender 3 días (72 h). Última toma domingo 11/10 18:00. Coordinar 
 Esperado: suspender 5 días (120 h). Última toma viernes 09/10 18:00. Sin terapia puente (la puntuación alta no es criterio de puente en el protocolo).
 
 **A11.** Warfarina por válvula aórtica mecánica, sin FA ni disfunción sistólica.
-Esperado: no cumple criterios de terapia puente, pero requiere confirmación porque es portador de válvula mecánica (ninguna suspensión sin confirmación).
+Esperado (punto 8, 2.2): se propone la suspensión estándar (INR < 1,5; < 1,4 si neuroaxial), sin terapia puente. Punto de validación rojo «válvula mecánica/stent: confirmar el manejo del anticoagulante».
 
 **A12.** Acenocumarol por TVP hace 6 semanas. 70 kg. Aclaramiento 25 mL/min. Colectomía.
-Esperado: alerta de TVP < 3 meses. Terapia puente con enoxaparina 70 mg cada 24 h (aclaramiento < 30), última dosis la mañana del miércoles 14/10. Requiere confirmación.
+Esperado (punto 8, 2.1): alerta de TVP < 3 meses. Se propone la pauta de puente (enoxaparina 70 mg cada 24 h por aclaramiento < 30, última dosis la mañana del miércoles 14/10). Punto de validación rojo «terapia puente: confirmar dosis y riesgo trombótico».
 
 **A13.** Acenocumarol. Catarata con bloqueo retrobulbar.
 Esperado: oftalmología de riesgo moderado-alto. Suspender según el protocolo general (3 días), no «mantener».
@@ -96,7 +96,7 @@ Esperado: 72 h (aclaramiento < 50). Adelantar la dosis del lunes 12/10 de las 09
 Esperado: mantener.
 
 **C2.** AAS 100 mg. Craneotomía (neurocirugía intracraneal).
-Esperado: requiere confirmación.
+Esperado (punto 8, 3.1): suspender 5 días (criterio prudente en espacio cerrado). Punto de validación amarillo «confirmar la suspensión».
 
 **C3.** AAS 300 mg a las 09:00, indicación no cardiovascular.
 Esperado: mantener (dosis > 200 mg, pero la colecistectomía no es de muy alto riesgo de sangrado y no hay técnica neuroaxial).
@@ -108,7 +108,7 @@ Esperado: mantener, sin confirmación (no hay que suspenderlo).
 Esperado: suspender 5 días. Última toma viernes 09/10 a las 09:00.
 
 **C4b.** AAS 300 mg por indicación cardiovascular. Craneotomía por tumor.
-Esperado: requiere confirmación, con la sugerencia de pasar a 100 mg/día.
+Esperado (punto 8, corrección C4b): en espacio cerrado, cualquier dosis de AAS se suspende 5 días (igual que el C2); la bajada a 100 mg/día solo se aplica fuera del espacio cerrado. Punto de validación amarillo.
 
 **C4c.** AAS 300 mg a las 09:00, indicación no cardiovascular. Vitrectomía.
 Esperado: suspender 5 días. Última toma viernes 09/10 a las 09:00.
@@ -117,10 +117,10 @@ Esperado: suspender 5 días. Última toma viernes 09/10 a las 09:00.
 Esperado: alerta roja «valorar diferir». Requiere confirmación. Ninguna pauta de antiagregantes en la hoja del paciente.
 
 **C6.** AAS + clopidogrel 75 mg a las 09:00. Stent por SCA hace 14 meses. Colecistectomía, anestesia general.
-Esperado: no es reciente. Mantener AAS, clopidogrel 5 días (última toma viernes 09/10 09:00), pero requiere confirmación por ser portador de stent.
+Esperado (punto 8, corrección C6): no es reciente. Mantener el AAS; suspender el clopidogrel 5 días (última toma viernes 09/10 09:00). Punto de validación amarillo «stent no reciente: confirmar la suspensión del P2Y12 con cardiología si hay dudas».
 
 **C7.** Clopidogrel en monoterapia a las 09:00 por ictus antiguo. Prótesis de rodilla con raquídea.
-Esperado: 7 días (neuroaxial). Última toma miércoles 07/10 09:00. Requiere confirmación con la sugerencia de AAS 100 mg durante la retirada.
+Esperado (punto 8): 7 días (neuroaxial). Última toma miércoles 07/10 09:00. Punto de validación amarillo con la sugerencia de AAS 100 mg durante la retirada.
 
 **C8.** Triflusal 300 mg a las 09:00 y 21:00. Colecistectomía, anestesia general.
 Esperado: 7 días. Última toma miércoles 07/10 21:00.
@@ -164,7 +164,7 @@ Esperado: 10 UI la mañana de la intervención.
 Esperado: basal al 80 % y suspender bolos. Sin confirmación (la decisión depende solo del riesgo quirúrgico).
 
 **D11.** Bomba de insulina. Colectomía (riesgo quirúrgico intermedio).
-Esperado: requiere confirmación (riesgo intermedio o alto).
+Esperado (punto 8, corrección 5): venir con la bomba funcionando a su ritmo basal habitual y traer material de recambio; en el hospital se decide si se mantiene o se pasa a insulina en el suero. Punto de validación amarillo «valorar pasar a insulina intravenosa (CPOC/JBDS)».
 
 ## E. Otros fármacos
 
@@ -178,7 +178,7 @@ Esperado: no tomar el día de la intervención. Última toma miércoles 14/10 21
 Esperado: mantener.
 
 **E3.** Entresto.
-Esperado: requiere confirmación.
+Esperado (punto 8, 5.2): suspender 24 h antes (vida media larga). Punto de validación amarillo «confirmar la suspensión».
 
 **E4.** Furosemida 40 mg a las 09:00.
 Esperado: no tomar la mañana de la intervención. Última toma miércoles 14/10 09:00.
@@ -190,7 +190,7 @@ Esperado: 48 h. Última toma lunes 12/10 21:00. Nota de litemia y función renal
 Esperado: 24 h. Última toma martes 13/10 21:00. Nota de anestesia segura con IMAO.
 
 **E7.** Tranilcipromina.
-Esperado: requiere confirmación (retirada con psiquiatría). Nota de anestesia segura con IMAO.
+Esperado (punto 8, 10.1): mantener por defecto con la nota de anestesia segura con IMAO. Punto de validación amarillo «confirmar retirada 10-14 días con psiquiatría o anestesia segura con IMAO».
 
 **E8.** Rasagilina.
 Esperado: mantener, con la nota de fármacos a evitar.
@@ -205,10 +205,10 @@ Esperado: 72 h. Última toma domingo 11/10 21:00 (los AINE no adelantan tomas).
 Esperado: mantener.
 
 **E12.** Adalimumab cada 2 semanas, última dosis jueves 08/10.
-Esperado: la intervención cae a mitad de ciclo. Nota de planificación. Requiere confirmación.
+Esperado (punto 8, 7.3): se propone programar la cirugía al final del ciclo (la intervención cae a mitad de ciclo). Nota de planificación. Punto de validación amarillo «confirmar el encaje de la cirugía con el ciclo».
 
 **E13.** Bevacizumab, última dosis hace 4 semanas.
-Esperado: alerta «retrasar cirugía al menos 6 a 8 semanas desde la última dosis». Requiere confirmación.
+Esperado (punto 8, 8.1): alerta roja «retrasar cirugía al menos 6-8 semanas desde la última dosis». Texto al paciente «Avise a su oncólogo de la fecha de la operación antes de recibir la siguiente dosis». Punto de validación rojo.
 
 **E14.** Eylea (aflibercept intravítreo).
 Esperado: mantener; no activa la regla de antiangiogénicos.
@@ -217,7 +217,7 @@ Esperado: mantener; no activa la regla de antiangiogénicos.
 Esperado: suspender 14 días si es posible, mínimo 7.
 
 **E16.** Mujer 35 años, anticonceptivo combinado oral. Prótesis de cadera (riesgo trombótico alto), anestesia general posible.
-Esperado: requiere confirmación; en la hoja, «Sobre su anticonceptivo, el anestesiólogo le llamará…»; sugerencia de suspensión solo en las notas. Además, la advertencia de sugammadex para anticonceptivo oral.
+Esperado (punto 8, 9.2): mantener por defecto (no se suspende de rutina por la cirugía). Punto de validación amarillo «confirmar si procede suspender 4-6 semanas». Además, la advertencia de sugammadex para anticonceptivo oral.
 
 **E17.** Mujer 30 años, implante anticonceptivo. Colecistectomía, anestesia general.
 Esperado: sin la regla de riesgo trombótico. Advertencia de sugammadex para anticonceptivo no oral (barrera 7 días).
@@ -310,4 +310,5 @@ Esperado: tarjeta inversa sugiriendo preguntar por la CPAP.
 1. IECA y ARA-II: no tomar el día de la intervención, para que el paciente no esté dos días sin tratamiento.
 2. GLP-1 semanales: la última dosis debe ser al menos 7 días antes de la intervención.
 3. Anticoagulantes con plazo en horas (ACOD, heparinas, fondaparinux): adelantar a la hora límite la primera toma posterior al límite si cae como máximo 10 horas después, siempre que quede al menos la mitad del intervalo habitual desde la toma anterior. Nunca se atrasa una toma. En el resto de fármacos no se adelantan tomas.
-4. Bomba de insulina (2026-10-04): se retira el régimen (CMA/ingreso); la decisión depende solo del riesgo quirúrgico (bajo = sin confirmación; intermedio o alto = con confirmación). Casos D10 (riesgo bajo) y D11 (riesgo intermedio) actualizados.
+4. Bomba de insulina (2026-10-04): se retira el régimen (CMA/ingreso); la decisión depende solo del riesgo quirúrgico. Riesgo bajo: basal al 80 % y suspender bolos. Riesgo intermedio o alto (punto 8): venir con la bomba a su ritmo basal habitual y traer recambios; en el hospital se decide si se mantiene o se pasa a insulina intravenosa; punto de validación amarillo (CPOC/JBDS). Casos D10 y D11 actualizados.
+5. Punto 8 (fase ágil): ningún fármaco queda «pendiente de confirmar». Cada regla propone siempre una pauta concreta y, cuando la decisión clínica es relevante, deja un punto de validación 🔴 (posponer) o 🟡 (validar) para el anestesiólogo. Si el punto es rojo, la hoja del paciente añade la línea «El anestesiólogo revisará esta indicación y le llamará si hay algún cambio». Falta de aclaramiento: se usa el filtrado glomerular apuntado como aproximación y, si no lo hay, el tramo más prudente (A7). Falta la hora de la toma: se asume la toma más tardía (23:59). Plazo no alcanzable: «No tome más dosis desde hoy» (rojo). Casos afectados: A7, A8, A11, A12, C2, C4b, C6, C7, D11, E3, E7, E12, E13, E16.
