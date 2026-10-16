@@ -39,6 +39,8 @@ export function soloAscii(texto: string): string {
     .replace(/[“”]/g, '"')
     .replace(/º/g, 'o')
     .replace(/ª/g, 'a')
+    .replace(/ m²/g, 'm2') // «mL/min/1,73 m²» → «mL/min/1,73m2» (filtrado glomerular)
+    .replace(/²/g, '2')
     .replace(/[^\x00-\x7F]/g, '');
 }
 

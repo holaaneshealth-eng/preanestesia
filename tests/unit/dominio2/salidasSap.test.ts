@@ -27,6 +27,17 @@ describe('§10.1 · texto de SAP (solo antecedentes patológicos y quirúrgicos)
     expect(r.texto).not.toContain('ASA');
   });
 
+  it('HEMSTOP en el SAP: sin preguntar no sale; preguntado negativo sale «0 (negativo)»; positivo sale', () => {
+    // Sin preguntar: no se pasa `hemstop` → ninguna línea.
+    expect(construirSap(entradaSap()).texto).not.toContain('HEMSTOP');
+    // Preguntado y negativo (todas «no», puntuación 0): sí sale, con «0 (negativo)».
+    const neg = construirSap(entradaSap({ hemstop: { puntuacion: 0, positivo: false } }));
+    expect(neg.texto).toContain('HEMSTOP: 0 (negativo).');
+    // Preguntado y positivo: sale con el resultado positivo.
+    const pos = construirSap(entradaSap({ hemstop: { puntuacion: 3, positivo: true } }));
+    expect(pos.texto).toContain('HEMSTOP: 3 (positivo).');
+  });
+
   it('hemoglobina y filtrado glomerular solo si se apuntan; AUDIT-C y HEMSTOP solo si se rellenan', () => {
     const base = construirSap(entradaSap());
     expect(base.texto).not.toContain('Analitica');
@@ -37,7 +48,10 @@ describe('§10.1 · texto de SAP (solo antecedentes patológicos y quirúrgicos)
       auditC: { puntuacion: 2, positivo: false },
       hemstop: { puntuacion: 0, positivo: false },
     }));
-    expect(con.texto).toContain('Analitica: Hb 13,5 g/dL, FG 80 mL/min/1,73 (20/09/2026).');
+    expect(con.texto).toContain('Analitica: Hb 13,5 g/dL, FG 80 mL/min/1,73 m² (20/09/2026).');
+    // En modo solo ASCII el filtrado se escribe «mL/min/1,73m2».
+    const ascii = construirSap(entradaSap({ filtradoGlomerular: 80 }), { soloAscii: true });
+    expect(ascii.texto).toContain('FG 80 mL/min/1,73m2');
     expect(con.texto).toContain('AUDIT-C: 2 (negativo).');
     expect(con.texto).toContain('HEMSTOP: 0 (negativo).');
     // Orden: AP, AQ, analítica, AUDIT-C, HEMSTOP y consentimiento al final.

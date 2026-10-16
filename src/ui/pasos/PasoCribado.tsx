@@ -36,6 +36,10 @@ export function PasoCribado({ inicial, pediatrico = false, obstetrico = false, o
   const [enfermedades, setEnfermedades] = useState<Set<string>>(new Set(inicial?.enfermedades ?? []));
   const [respuestasModulos, setRespuestasModulos] = useState<RespuestasModulos>(inicial?.respuestasModulos ?? {});
   const [hemstop, setHemstop] = useState<EntradaHemstop>(inicial?.hemstop ?? { ...HEMSTOP_VACIO });
+  // HEMSTOP preguntado: marcada si el estado inicial lo traía o había alguna respuesta.
+  const [hemstopPreguntado, setHemstopPreguntado] = useState<boolean>(
+    inicial?.hemstopPreguntado ?? Object.values(inicial?.hemstop ?? {}).some((v) => v === true),
+  );
   const [condiciones, setCondiciones] = useState<CondicionesEspeciales>(
     inicial?.condicionesEspeciales ?? { ...CONDICIONES_ESPECIALES_VACIO },
   );
@@ -98,6 +102,8 @@ export function PasoCribado({ inicial, pediatrico = false, obstetrico = false, o
   }
   function alternarHemstop(id: keyof EntradaHemstop) {
     setHemstop((h) => ({ ...h, [id]: !h[id] }));
+    // Al marcar cualquier respuesta, el HEMSTOP queda «preguntado» automáticamente.
+    setHemstopPreguntado(true);
   }
   function alternarCondicion(id: keyof CondicionesEspeciales) {
     setCondiciones((c) => ({ ...c, [id]: !c[id] }));
@@ -116,6 +122,7 @@ export function PasoCribado({ inicial, pediatrico = false, obstetrico = false, o
       enfermedades: [...enfermedades],
       respuestasModulos: respuestasFiltradas,
       hemstop,
+      hemstopPreguntado,
       condicionesEspeciales: condiciones,
       otrasEnfermedades,
     });
@@ -207,6 +214,12 @@ export function PasoCribado({ inicial, pediatrico = false, obstetrico = false, o
 
       <h3>Cuestionario de sangrado (HEMSTOP)</h3>
       <p>Se hace a todos los pacientes, marque o no marque enfermedades de la sangre.</p>
+      {/* «HEMSTOP preguntado»: se marca sola al marcar cualquier respuesta; márquela a
+          mano si lo ha preguntado y todas son «no». Solo así el SAP escribe la línea. */}
+      <label className={`radio-tarjeta ${hemstopPreguntado ? 'seleccionado' : ''}`}>
+        <input type="checkbox" checked={hemstopPreguntado} onChange={() => setHemstopPreguntado((v) => !v)} />
+        HEMSTOP preguntado
+      </label>
       <div className="grupo-checks">
         {PREGUNTAS_HEMSTOP.map((p) => (
           <label key={p.id} className={`radio-tarjeta ${hemstop[p.id] ? 'seleccionado' : ''}`}>

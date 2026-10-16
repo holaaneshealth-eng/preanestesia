@@ -191,6 +191,13 @@ export interface CribadoUi {
   respuestasModulos: RespuestasModulos;
   /** HEMSTOP, que se hace siempre (R3.2.23). */
   hemstop: EntradaHemstop;
+  /**
+   * HEMSTOP preguntado: se marca sola al marcar cualquier respuesta, y la enfermera
+   * puede marcarla a mano si todas son «no». El SAP escribe la línea del HEMSTOP
+   * (también «0 (negativo)») solo si esto es true; así un HEMSTOP preguntado y
+   * negativo se distingue de uno no preguntado.
+   */
+  hemstopPreguntado?: boolean;
   /** Condiciones especiales (§5.15): hipertermia maligna y pseudocolinesterasa. */
   condicionesEspeciales: CondicionesEspeciales;
   /** Pruebas recientes y su fecha (§7.4), para descontar las vigentes. Opcional. */

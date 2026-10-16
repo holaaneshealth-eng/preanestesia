@@ -1722,4 +1722,61 @@ test.describe('Fase ágil · comprobación previa (punto 1)', () => {
     // Sin bloqueo entre las técnicas: NO aparece el paso del bloqueo de nervios.
     await expect(prep.getByText(/Si su anestesia incluye un bloqueo de nervios/)).toHaveCount(0);
   });
+
+  test('ajuste · HEMSTOP preguntado: sin marcar no sale en el SAP; marcado con todo «no» sale «0 (negativo)»', async ({ page }) => {
+    await page.goto('/preanestesia/');
+    await page.getByRole('button', { name: 'Presencial' }).click();
+    await page.getByRole('button', { name: 'Comenzar' }).click();
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
+    await page.locator('#proc').fill('hernioplastia');
+    await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await pasoAlergiasSinAlergias(page);
+    await page.locator('#edad').fill('50');
+    await page.getByRole('radio', { name: 'Hombre' }).check();
+    await page.locator('#peso').fill('80');
+    await page.locator('#talla').fill('175');
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 3 -> 4
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 4 -> 5
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 5 -> 6
+    // Paso 6: no marcar «HEMSTOP preguntado» ni ninguna respuesta.
+    await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7 pruebas
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 7 pruebas -> técnica
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 8 -> 9
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 9 -> 10
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 10 -> resumen
+    await pasoMtnd4NoVenezolana(page);
+    const sap1 = page.getByRole('textbox', { name: 'Texto para SAP' });
+    await expect(sap1).not.toHaveValue(/HEMSTOP/);
+
+    // Segunda entrevista: marcar «HEMSTOP preguntado» a mano con todo «no».
+    await page.goto('/preanestesia/');
+    await page.getByRole('button', { name: 'Presencial' }).click();
+    await page.getByRole('button', { name: 'Comenzar' }).click();
+    await page.locator('#fecha').fill(FECHA_INTERVENCION);
+    await page.locator('#proc').fill('hernioplastia');
+    await page.getByRole('button', { name: /Hernioplastia inguinal abierta/ }).first().click();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await pasoAlergiasSinAlergias(page);
+    await page.locator('#edad').fill('50');
+    await page.getByRole('radio', { name: 'Hombre' }).check();
+    await page.locator('#peso').fill('80');
+    await page.locator('#talla').fill('175');
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 3 -> 4
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 4 -> 5
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 5 -> 6
+    await page.getByRole('checkbox', { name: 'Ninguna enfermedad conocida' }).check();
+    await page.getByRole('checkbox', { name: 'HEMSTOP preguntado' }).check(); // todo «no»
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 6 -> 7 pruebas
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 7 pruebas -> técnica
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 7 -> 8
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 8 -> 9
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 9 -> 10
+    await page.getByRole('button', { name: 'Continuar' }).click(); // 10 -> resumen
+    await pasoMtnd4NoVenezolana(page);
+    const sap2 = page.getByRole('textbox', { name: 'Texto para SAP' });
+    await expect(sap2).toHaveValue(/HEMSTOP: 0 \(negativo\)/);
+  });
 });

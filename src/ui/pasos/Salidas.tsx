@@ -129,8 +129,6 @@ export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validacione
       : null;
     const cuatroAt = habitos?.cuatroAt ? calcular4AT(habitos.cuatroAt) : null;
     const hemstop = calcularHemstop(cribado.hemstop);
-    // HEMSTOP se considera «rellenado» si se ha marcado alguna respuesta (para el SAP).
-    const hemstopRellenado = Object.values(cribado.hemstop).some((v) => v === true);
 
     // Capacidad funcional reducida (< 4 METs o DASI ≤ 34, §6.6) para la nota ** del BNP.
     const dasiCapacidad = habitos && habitos.subeDosPisos !== 'si' && habitos.itemsDasi.length > 0
@@ -377,7 +375,7 @@ export function Salidas({ entrevista, modalidad, onConfirmarFarmaco, validacione
       ...(pruebasComplementarias?.filtradoGlomerular !== undefined ? { filtradoGlomerular: pruebasComplementarias.filtradoGlomerular } : {}),
       ...(fechaAnaliticaTxt ? { fechaAnalitica: fechaAnaliticaTxt } : {}),
       ...(audit ? { auditC: { puntuacion: audit.puntuacion, positivo: audit.positivo } } : {}),
-      ...(cribado.hemstop && hemstopRellenado ? { hemstop: { puntuacion: hemstop.puntuacion, positivo: hemstop.positivo } } : {}),
+      ...(cribado.hemstopPreguntado ? { hemstop: { puntuacion: hemstop.puntuacion, positivo: hemstop.positivo } } : {}),
       ...(consentimiento
         ? { consentimiento: consentimiento.estado === 'entregado'
             ? { estado: 'entregado' as const, ...(consentimiento.fecha ? { fecha: consentimiento.fecha } : {}) }

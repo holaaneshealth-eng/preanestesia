@@ -43,7 +43,7 @@ export function construirSap(e: EntradaSap, opciones: OpcionesSap = {}): Resulta
   // Analítica: hemoglobina y filtrado glomerular, solo si se han apuntado (con fecha si la hay).
   const analitica: string[] = [];
   if (e.hemoglobina !== undefined) analitica.push(`Hb ${String(e.hemoglobina).replace('.', ',')} g/dL`);
-  if (e.filtradoGlomerular !== undefined) analitica.push(`FG ${e.filtradoGlomerular} mL/min/1,73`);
+  if (e.filtradoGlomerular !== undefined) analitica.push(`FG ${e.filtradoGlomerular} mL/min/1,73 m²`);
   const lineaAnalitica = analitica.length > 0
     ? [`Analitica: ${analitica.join(', ')}${e.fechaAnalitica ? ` (${e.fechaAnalitica})` : ''}.`]
     : [];
