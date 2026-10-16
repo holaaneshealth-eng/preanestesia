@@ -175,6 +175,23 @@ function extraerTokens(esperadoRaw: string): string[] {
  *  - Si el esperado no contiene ningún dato comprobable → revisión manual.
  * Firma con compatibilidad: los 4.º/5.º argumentos antiguos se ignoran.
  */
+/** Quita las tildes de una cadena (para comparar «acción» con «accion»). */
+function sinTildes(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+/**
+ * Comprueba la ACCIÓN cuando el esperado no tiene datos numéricos: true si el esperado
+ * EMPIEZA por una acción (mantener/suspender/ajustar) que coincide con la `acción: X`
+ * del cálculo del motor. Las negaciones («no suspender») no empiezan por la acción, así
+ * que no se comprueban por aquí (quedan en revisión manual).
+ */
+function accionCoincide(esperadoRaw: string, calculado: string): boolean {
+  const mExp = sinTildes(esperadoRaw.toLowerCase().trim()).match(/^(mantener|suspender|ajustar)\b/);
+  const mMot = sinTildes(calculado.toLowerCase()).match(/accion:\s*(mantener|suspender|ajustar)\b/);
+  return mExp !== null && mMot !== null && mExp[1] === mMot[1];
+}
+
 function add(id: string, calculado: string, textoPaciente: string, _a?: string | boolean, _b?: boolean): void {
   const esperado = ESPERADO_LITERAL[id] ?? '(no encontrado en casos_referencia.md)';
   const tokens = extraerTokens(esperado);
@@ -182,7 +199,10 @@ function add(id: string, calculado: string, textoPaciente: string, _a?: string |
   let veredicto: Veredicto;
   let faltantes: string[] = [];
   if (tokens.length === 0) {
-    veredicto = 'revision_manual';
+    // Sin dato numérico: se comprueba la ACCIÓN si el esperado empieza por ella
+    // (mantener/suspender/ajustar) y coincide con la que da el motor. Solo puede
+    // convertir «revisión manual» en «coincide»; nunca afecta a casos con tokens.
+    veredicto = accionCoincide(esperado, calculado) ? 'coincide' : 'revision_manual';
   } else {
     faltantes = tokens.filter((t) => !salida.includes(t));
     veredicto = faltantes.length === 0 ? 'coincide' : 'dudoso';

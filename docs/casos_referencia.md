@@ -26,10 +26,12 @@ Esperado: 48 h. Límite martes 13/10 08:00. Adelantar la toma del martes 13/10 d
 Esperado: 48 + 24 = 72 h. Adelantar la toma del lunes 12/10 de las 09:00 a las 08:00; es la última. Sin la nota de 24 h.
 
 **A2b.** Igual que A1 (48 h), pero la intervención es el jueves 15/10 a las 13:00.
-Esperado: límite martes 13/10 13:00. La toma de las 21:00 cae 8 h después del límite, pero adelantarla a las 13:00 la dejaría a 4 h de la de las 09:00 (menos de 6 h). No se adelanta: última toma martes 13/10 09:00.
+Esperado: no se adelanta ninguna toma; última toma martes 13/10 09:00.
+Razonamiento (no comprobado): límite 13:00; la toma de las 21:00 cae 8 h después del límite, pero adelantarla dejaría menos de 6 h desde la de las 09:00.
 
 **A3.** Rivaroxabán 20 mg a las 21:00. Aclaramiento 25 mL/min. Prótesis total de rodilla con raquídea.
-Esperado: 96 h (anti-Xa con neuroaxial y aclaramiento < 30). Límite domingo 11/10 08:00. La toma del domingo a las 21:00 cae 13 h después del límite: no se adelanta. Última toma sábado 10/10 21:00.
+Esperado: no se adelanta; última toma sábado 10/10 21:00.
+Razonamiento (no comprobado): 96 h (anti-Xa con neuroaxial, aclaramiento < 30); límite domingo 11/10 08:00; la toma del domingo a las 21:00 cae 13 h después del límite.
 
 **A3b.** Rivaroxabán 20 mg a las 21:00, aclaramiento 60, prótesis de rodilla con raquídea (72 h), intervención el jueves 15/10 a las 13:00.
 Esperado: límite lunes 12/10 13:00. Adelantar la toma del lunes 12/10 de las 21:00 a las 13:00 (8 h de adelanto; quedan 16 h desde la toma anterior).
@@ -76,16 +78,19 @@ Esperado: 72 h. Adelantar la toma del lunes 12/10 de las 09:00 a las 08:00; es l
 ## B. Heparinas y fondaparinux
 
 **B1.** Enoxaparina 40 mg a las 18:00, 70 kg, aclaramiento > 30 (profiláctica). Raquídea.
-Esperado: 12 h. Límite miércoles 14/10 20:00. Última dosis miércoles 14/10 18:00.
+Esperado: última dosis miércoles 14/10 18:00.
+Razonamiento (no comprobado): profiláctica, 12 h; límite miércoles 14/10 20:00.
 
 **B2.** Igual que B1 con la dosis a las 21:00.
 Esperado: adelantar la dosis del miércoles 14/10 a las 20:00 o antes.
 
 **B3.** Enoxaparina 80 mg a las 09:00 y 21:00, 80 kg, aclaramiento 60 (terapéutica: 1 mg/kg/12 h).
-Esperado: clasificada como terapéutica. 24 h. Adelantar la dosis del miércoles 14/10 de las 09:00 a las 08:00; no ponerse la de las 21:00.
+Esperado: adelantar la dosis del miércoles 14/10 de las 09:00 a las 08:00 (última dosis).
+Razonamiento (no comprobado): clasificada como terapéutica, 24 h; no ponerse la toma de las 21:00.
 
 **B4.** Fondaparinux 2,5 mg a las 09:00, aclaramiento 60. Cirugía de riesgo hemorrágico bajo sin neuroaxial.
-Esperado: 36 h. Límite martes 13/10 20:00. La dosis del miércoles a las 09:00 cae 13 h después del límite: no se adelanta. Última dosis martes 13/10 09:00.
+Esperado: no se adelanta; última dosis martes 13/10 09:00.
+Razonamiento (no comprobado): 36 h; límite martes 13/10 20:00; la dosis del miércoles a las 09:00 cae 13 h después del límite.
 
 **B5.** Fondaparinux 7,5 mg a las 09:00, 70 kg, aclaramiento 40 (terapéutico).
 Esperado: 72 h (aclaramiento < 50). Adelantar la dosis del lunes 12/10 de las 09:00 a las 08:00; ya no ponerse más.
@@ -99,7 +104,8 @@ Esperado: mantener.
 Esperado (punto 8, 3.1): suspender 5 días (criterio prudente en espacio cerrado); última toma viernes 09/10 09:00. Punto de validación amarillo «confirmar la suspensión».
 
 **C3.** AAS 300 mg a las 09:00, indicación no cardiovascular.
-Esperado: mantener (dosis > 200 mg, pero la colecistectomía no es de muy alto riesgo de sangrado y no hay técnica neuroaxial).
+Esperado: mantener.
+Razonamiento (no comprobado): dosis > 200 mg, pero la colecistectomía no es de muy alto riesgo de sangrado y no hay técnica neuroaxial.
 
 **C4.** AAS 300 mg por indicación cardiovascular.
 Esperado: mantener, sin confirmación (no hay que suspenderlo).
